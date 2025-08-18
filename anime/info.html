@@ -1,0 +1,748 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Detail Donghua & Anime - huaStream.YYDZ</title>
+  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+  <!-- Tailwind CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.2/dist/tailwind.min.css" rel="stylesheet">
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+  <!-- Font Awesome 6 -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+<style>
+  *,
+*::before,
+*::after { box-sizing: border-box; }
+
+:root{
+  --bg:#f6f8fb;
+  --surface: rgba(255,255,255,0.85);
+  --text:#0f1724;
+  --muted:#6b7280;
+  --accent1:#2563eb;
+  --accent2:#7c3aed;
+  --glass: rgba(255,255,255,0.6);
+}
+
+html,body{ height:100%; }
+
+body{
+  margin:0;
+  font-family:'Poppins', 'Inter', system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+  background: linear-gradient(180deg,#fbfdff 0%, #eef6ff 40%, var(--bg) 100%);
+  color:var(--text);
+  -webkit-font-smoothing:antialiased;
+  -moz-osx-font-smoothing:grayscale;
+  line-height:1.4;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.container{
+  max-width:1200px;
+  margin:0 auto;
+  padding:0 1rem;
+}
+
+/* header */
+header{
+  position:sticky;
+  top:0;
+  z-index:60;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:1rem;
+  padding:.65rem 0;
+  backdrop-filter: blur(8px) saturate(120%);
+  background: linear-gradient(180deg, rgba(255,255,255,0.7), rgba(255,255,255,0.55));
+  border-bottom: 1px solid rgba(15,23,42,0.04);
+  transition: box-shadow .22s ease, transform .18s ease;
+}
+
+header.elev{ box-shadow: 0 8px 30px rgba(15,23,42,0.06); transform: translateY(-1px); }
+
+/* logo */
+header h1{
+  display:flex;
+  align-items:center;
+  gap:.6rem;
+  margin:0;
+  font-weight:800;
+  font-size:1.25rem;
+  letter-spacing:-0.2px;
+  background: linear-gradient(90deg,var(--accent1),var(--accent2));
+  -webkit-background-clip:text;
+  background-clip:text;
+  color:transparent;
+}
+
+/* logo icon badge */
+.logo-badge{
+  display:inline-grid;
+  place-items:center;
+  width:36px;
+  height:36px;
+  border-radius:10px;
+  background: linear-gradient(135deg, rgba(37,99,235,0.12), rgba(124,58,237,0.10));
+  box-shadow: 0 6px 18px rgba(37,99,235,0.08);
+  color:var(--accent1);
+  font-size:1rem;
+}
+
+/* search form (pill) */
+#searchForm{
+  display:flex;
+  align-items:center;
+  gap:.3rem;
+  padding:3px 6px;
+  border-radius:9999px;
+  background: var(--surface);
+  box-shadow: 0 6px 18px rgba(2,6,23,0.04);
+  border: 1px solid rgba(15,23,42,0.05);
+  transition: box-shadow .18s ease, transform .18s ease;
+  max-width: 260px; 
+}
+
+/* focus state */
+#searchForm:focus-within{
+  box-shadow: 0 10px 28px rgba(37,99,235,0.08);
+  transform: translateY(-1.5px);
+  border-color: rgba(99,102,241,0.12);
+}
+
+/* input */
+#searchInput{
+  background: transparent;
+  border: none;
+  padding:.4rem .6rem;
+  width: 100%;
+  max-width: 180px;   /* <-- lebih ramping */
+  font: 500 .9rem/1.2 'Inter', system-ui, sans-serif;
+  color:var(--text);
+  caret-color: var(--accent1);
+  outline: none;
+}
+
+/* button */
+#searchBtn{
+  display:inline-flex;
+  align-items:center;
+  gap:.3rem;
+  border:none;
+  padding:.4rem .7rem;
+  border-radius:9999px;
+  font-weight:600;
+  font-size:.85rem;
+  color:#fff;
+  background: linear-gradient(90deg,var(--accent1),var(--accent2));
+  cursor:pointer;
+  box-shadow: 0 8px 20px rgba(37,99,235,0.1);
+  transition: transform .14s cubic-bezier(.2,.8,.2,1), box-shadow .14s ease;
+}
+
+/* hover/active */
+#searchBtn:hover{ transform: translateY(-2px); box-shadow: 0 14px 28px rgba(37,99,235,0.14); }
+#searchBtn:active{ transform: translateY(0); box-shadow: 0 6px 16px rgba(37,99,235,0.1); }
+
+/* responsive */
+@media (max-width:880px){
+  .container{ padding:0 .9rem; }
+  #searchForm{ max-width: 100%; }
+  #searchInput{ max-width: 100%; }
+}
+
+@media (max-width:640px){
+  header{ flex-direction:column; align-items:stretch; gap:.6rem; padding:.6rem 0; }
+  header h1{ justify-content:center; width:100%; }
+  #searchForm{ width:100%; max-width: 100%; } 
+  #searchInput{ flex:1; width:100%; }
+  #searchBtn{ padding:.5rem .7rem; font-size:.85rem; }
+}
+
+/* dark mode */
+@media (prefers-color-scheme: dark){
+  :root{ --text:#e6eef8; --muted:#9ca3af; --bg:#071025; --surface: rgba(10,14,20,0.55); }
+  body{ background: linear-gradient(180deg,#041226 0%, #071025 60%); color:var(--text); }
+  header{ background: linear-gradient(180deg, rgba(8,10,15,0.6), rgba(6,8,12,0.55)); border-bottom: 1px solid rgba(255,255,255,0.03); }
+  #searchForm{ background: var(--surface); border: 1px solid rgba(255,255,255,0.03); box-shadow: 0 10px 30px rgba(2,6,23,0.45); }
+  #searchInput{ color:var(--text); }
+}
+
+.rekom-text {
+  font-size: 1rem; /* kecil */
+  font-weight: 600;
+  text-align: center; /* tengah */
+  margin-bottom: 0.75rem;
+  color: #ffff; /* bisa diganti sesuai tema */
+}
+
+/* Gradient untuk ikon */
+.gradient-icon {
+  background: linear-gradient(90deg, #3b82f6, #06b6d4); /* biru ke cyan */
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* ===========================
+   Layout dasar agar footer di bawah
+=========================== */
+html, body {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+/* ===========================
+   Konten utama fleksibel
+=========================== */
+main {
+  flex: 1; /* mengambil sisa ruang sehingga footer selalu di bawah */
+  padding: 1rem;
+}
+
+/* ===========================
+   Footer styling
+=========================== */
+.footer {
+  background-color: var(--bg);
+  color: var(--text);
+  text-align: center;
+  padding: 1rem 0 0; 
+  border-radius: 1rem 1rem 0 0;
+  font-family: 'Poppins', sans-serif;
+  position: relative;
+  flex-shrink: 0; /* jangan mengecil */
+}
+
+.footer .container {
+  max-width: 600px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  align-items: center;
+  padding: 0.75rem 1rem;
+  border-radius: 1rem;
+  transition: box-shadow 0.2s ease, transform 0.15s ease;
+}
+
+.footer .container:active {
+  box-shadow: 0 8px 20px rgba(37,99,235,0.3);
+  transform: translateY(-1px);
+}
+
+.footer .copyright {
+  font-size: 0.8rem;
+}
+.footer p {
+  margin: 0.5rem 0;
+}
+.footer .contact-icons {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  font-size: 1.3rem;
+}
+
+.footer .contact-icons a {
+  transition: transform 0.2s;
+  background: linear-gradient(90deg, var(--accent1), var(--accent2));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.footer .contact-icons a:active {
+  transform: scale(1.2);
+}
+
+.footer .team {
+  font-size: 0.75rem;
+}
+
+.footer::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 50px;
+  background-color: var(--bg);
+  z-index: -1;
+}
+
+.gradient-text {
+  transition: transform 0.2s;
+  background: linear-gradient(90deg, var(--accent1), var(--accent2));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* Dark mode */
+@media (prefers-color-scheme: dark) {
+  .footer {
+    background-color: var(--surface, #0a0e14);
+    color: var(--text, #e6eef8);
+  }
+}
+</style>
+<style>
+/* --- Wrapper utama (glass card) --- */
+.anime-detail-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+  align-items: center;
+  padding: 2rem 1rem;
+  width: 100%;
+  max-width: 900px;
+  margin: 2rem auto;
+  background: var(--surface, rgba(255,255,255,0.85));
+  backdrop-filter: blur(12px);
+  border-radius: 1rem;
+  box-shadow: 0 6px 24px rgba(0,0,0,0.08);
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+.anime-detail-wrapper:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 36px rgba(0,0,0,0.12);
+}
+
+/* --- Thumbnail utama + overlay gradient --- */
+.anime-thumb-container {
+  position: relative;
+  width: 100%;
+  max-width: 600px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border-radius: 1rem;
+  overflow: hidden;
+}
+
+/* Gradient overlay tetap tapi tidak berubah saat hover */
+.anime-thumb-container::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 50%; /* separuh dari bawah */
+  background: linear-gradient(to top, rgba(0, 123, 255, 0.5), rgba(0, 123, 255, 0));
+  pointer-events: none;
+  border-radius: 0 0 1rem 1rem; 
+  transition: none; /* hapus transisi background */
+}
+
+.main-thumb {
+  width: 70%;
+  border-radius: 1rem;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.08);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+/* Hover hanya zoom + shadow */
+.main-thumb:hover {
+  transform: scale(1.02);
+  box-shadow: 0 12px 28px rgba(0,0,0,0.12);
+}
+
+/* Hilangkan efek hover overlay */
+.anime-thumb-container:hover::after {
+  /* kosongkan */
+}
+
+/* --- Info container --- */
+.anime-info-container {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  text-align: center;
+}
+
+/* --- Judul --- */
+.anime-title {
+  font-size: 1.8rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+  color: var(--text, #0f1724);
+  letter-spacing: 0.3px;
+}
+
+/* --- Rating --- */
+.anime-rating {
+  display: inline-block;
+  padding: 4px 12px;
+  background: linear-gradient(135deg, var(--accent1), var(--accent2));
+  color: #fff;
+  font-weight: 600;
+  font-size: 0.9rem;
+  border-radius: 9999px;
+  margin-bottom: 0.5rem;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+  transition: transform 0.2s ease;
+}
+
+.anime-rating:hover {
+  transform: scale(1.05);
+}
+
+/* --- Genre badges --- */
+.anime-genres {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 6px;
+  margin-bottom: 1rem;
+}
+
+.anime-genres .badge {
+  padding: 4px 12px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  border-radius: 9999px;
+  background: linear-gradient(135deg, var(--accent1), var(--accent2));
+  color: #fff;
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+.anime-genres .badge:hover {
+  transform: scale(1.05);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+}
+
+/* --- Synopsis --- */
+.anime-synopsis {
+  font-size: 0.95rem;
+  line-height: 1.5;
+  color: var(--muted, #6b7280);
+  padding: 0 1rem;
+  text-align: center;
+}
+
+/* Info tabel */
+.anime-info table {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 1rem 0;
+  font-size: 0.95rem;
+}
+
+.anime-info table td {
+  padding: 8px 12px;
+  vertical-align: top;
+  border-bottom: 1px solid rgba(15,23,42,0.08);
+}
+
+/* --- Episodes grid --- */
+.anime-episodes {
+  width: 100%;
+}
+
+.anime-episodes h3 {
+  margin-bottom: 0.5rem;
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.anime-episodes ul {
+  list-style: none;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 8px;
+  max-height: 320px;
+  overflow-y: auto;
+}
+
+.anime-episodes a {
+  display: block;
+  text-align: center;
+  padding: 8px 6px;
+  border-radius: 0.75rem;
+  background: rgba(0,0,0,0.03);
+  text-decoration: none;
+  color: var(--accent1);
+  font-weight: 500;
+  font-size: 0.85rem;
+  transition: all 0.2s ease;
+}
+
+.anime-episodes a:hover {
+  background: rgba(37,99,235,0.08);
+  transform: scale(1.02);
+}
+
+.anime-episodes a.active {
+  background: rgba(37,99,235,0.15);
+  font-weight: 600;
+}
+
+/* button nonton episode */
+.btn-watch-ep1 {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center; /* center teks & icon */
+  gap: .3rem; /* jarak icon & teks */
+  border: none;
+  padding: .3rem .8rem; /* cukup nyaman dan proporsional */
+  border-radius: 9999px; /* pill shape */
+  font-weight: 600;
+  font-size: .85rem;
+  color: #fff;
+  background: linear-gradient(90deg, var(--accent1, #ff416c), var(--accent2, #ff4b2b));
+  cursor: pointer;
+  box-shadow: 0 8px 20px rgba(37,99,235,0.1);
+  transition: transform .14s cubic-bezier(.2,.8,.2,1), box-shadow .14s ease;
+  white-space: nowrap; /* tetap satu baris */
+}
+
+.btn-watch-ep1 i {
+  font-size: 0.9rem;
+}
+
+/* hover/active */
+.btn-watch-ep1:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 14px 28px rgba(37,99,235,0.14);
+}
+
+.btn-watch-ep1:active {
+  transform: translateY(0);
+  box-shadow: 0 6px 16px rgba(37,99,235,0.1);
+}
+
+/* --- Responsif --- */
+@media (max-width: 720px) {
+  .anime-detail-wrapper {
+    padding: 1rem;
+  }
+
+  .anime-synopsis {
+    padding: 0 0.5rem;
+  }
+
+  .anime-episodes ul {
+    max-height: 250px;
+  }
+}
+
+/* --- Dark mode --- */
+@media (prefers-color-scheme: dark) {
+  .anime-detail-wrapper {
+    background: var(--surface, rgba(10,14,20,0.55));
+    box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+  }
+
+  .anime-title,
+  .anime-info table td:first-child {
+    color: #e6eef8;
+  }
+
+  .anime-synopsis {
+    color: var(--muted, #9ca3af);
+  }
+
+  .anime-episodes a {
+    background: rgba(255,255,255,0.05);
+    color: var(--accent1);
+  }
+
+  .anime-episodes a:hover {
+    background: rgba(37,99,235,0.15);
+  }
+
+  .anime-episodes a.active {
+    background: rgba(37,99,235,0.25);
+  }
+}
+</style>
+</head>
+<body class="text-gray-900">
+
+ <!-- Header -->
+  <header class="bg-white shadow p-4 flex justify-between items-center sticky top-0 z-50">
+    <h1 class="text-2xl font-bold text-blue-600 flex items-center gap-2">
+      HUASTREAM.YYDZ
+    </h1>
+    <form id="searchForm" class="flex items-center">
+      <input type="text" id="searchInput" placeholder="Cari Donghua atau Anime..." class="focus:outline-none px-2 py-1 border rounded" required>
+      <button type="submit" id="searchBtn" class="bg-blue-600 text-white px-3 py-2 hover:bg-blue-700 flex items-center gap-1">
+        <i class="fas fa-search"></i> Cari
+      </button>
+    </form>
+  </header>
+
+  <main class="p-4 space-y-8">
+  <div class="content" id="animeDetail">
+    <p class="text-center text-gray-500">Loading detail...</p>
+  </div>
+</main>
+
+<!-- Footer / Copyright & Contact -->
+<footer class="footer">
+  <div class="container">
+    <p class="copyright">
+      © 2025 <strong>HUASTREAM.YYDZ</strong>. All rights reserved.
+    </p>
+    <p class="contact-icons">
+      <a href="https://wa.me/6283872031397" target="_blank" class="icon-gradient"><i class="fab fa-whatsapp"></i></a>
+      <a href="https://t.me/Yudzxzy" target="_blank" class="icon-gradient"><i class="fab fa-telegram-plane"></i></a>
+      <a href="mailto:yudaaryaardhana1122@email.com" class="icon-gradient"><i class="fas fa-envelope"></i></a>
+    </p>
+    <p class="team">
+      Design & development <span class="font-semibold gradient-text">Tim Yudzxml</span>
+    </p>
+  </div>
+</footer>
+  </main>
+
+<script>
+const animeDetailContainer = document.getElementById('animeDetail');
+const id = sessionStorage.getItem('targetData') || "https://v1.samehadaku.how/anime/summer-pockets/";
+
+const apiDetail = `https://api.yudzxyz.x-server.my.id/api/samehadaku?action=detail&url=${id}`;
+
+async function loadDetail() {
+  animeDetailContainer.innerHTML = '<p class="text-center text-gray-500">Loading detail...</p>';
+  try {
+    const res = await axios.get(apiDetail);
+    const data = res.data;
+
+    if (data && data.result) {
+      const anime = data.result;
+
+      // --- Simpan ke localStorage ---
+      const animeStorage = {
+        title: anime.title || 'Judul Tidak Tersedia',
+        image: anime.img || '',
+        description: anime.description || 'Deskripsi tidak tersedia.',
+        episode: anime.episodes?.[0]?.number || '-', // episode pertama
+        episodes: anime.episodes?.map(ep => ({
+          title: ep.title,
+          link: ep.link,
+          thumbnail: ep.thumbnail || anime.img,
+          date: ep.date,
+          number: ep.number
+        })) || []
+      };
+      localStorage.setItem('animeData', JSON.stringify(animeStorage));
+
+      // --- Genres ---
+      let genresHTML = '';
+      if (anime.genres && anime.genres.length) {
+        genresHTML = anime.genres.map(g => `<span class="badge">${g}</span>`).join(' ');
+      }
+
+      // --- Info table dari details ---
+      let infoHTML = '';
+      if (anime.details) {
+        infoHTML = `<table>
+          ${Object.entries(anime.details).map(([k, v]) => `<tr><td>${k}</td><td>${v}</td></tr>`).join('')}
+        </table>`;
+      }
+
+      // --- Episodes list (urut dari terbaru) ---
+      let episodesHTML = '';
+      if (anime.episodes && anime.episodes.length) {
+        anime.episodes.sort((a, b) => parseInt(b.number) - parseInt(a.number));
+        episodesHTML = anime.episodes.map(ep => `
+          <li>
+            <a href="#" data-ep-link="${ep.link}">${ep.number} - ${ep.title} (${ep.date})</a>
+          </li>
+        `).join('');
+      }
+
+      // Ambil link EPS 1 (nomor 1)
+      let firstEpisodeLink = '#';
+      if (anime.episodes && anime.episodes.length) {
+        const sortedByNum = [...anime.episodes].sort((a, b) => parseInt(a.number) - parseInt(b.number));
+        firstEpisodeLink = sortedByNum[0]?.link || '#';
+      }
+
+      // --- Render HTML detail ---
+      animeDetailContainer.innerHTML = `
+<div class="anime-detail-wrapper">
+  <div class="anime-thumb-container">
+    <img src="${anime.img}" alt="${anime.title}" class="main-thumb">
+  </div>
+
+  <div class="anime-info-container">
+    <h2 class="anime-title">${anime.title || 'Judul Tidak Tersedia'}</h2>
+<span class="anime-rating">
+  <i class="fa fa-star" style="color: gold;"></i>
+  ${anime.ratingValue || 'N/A'} (${anime.ratingCount || '0'} votes)
+</span>
+    
+    <div class="anime-genres">${genresHTML}</div>
+    
+    <p class="anime-synopsis">${anime.description || 'Deskripsi tidak tersedia.'}</p>
+    
+    <div class="anime-info">
+      <h3>Info:</h3>
+      ${infoHTML}
+    </div>
+
+    <button class="btn-watch-ep1">
+      <i class="fas fa-play"></i> Nonton EPS 1
+    </button>
+
+    <div class="anime-episodes">
+      <h3>Episodes:</h3>
+      <ul>${episodesHTML}</ul>
+    </div>
+  </div>
+</div>
+`;
+
+      // --- Event klik tombol Nonton EPS 1 ---
+      const btnWatch = document.querySelector('.btn-watch-ep1');
+      if (btnWatch && firstEpisodeLink !== '#') {
+        btnWatch.addEventListener('click', () => {
+          sessionStorage.setItem('targetData', firstEpisodeLink);
+          window.location.href = '/anime/preview.html';
+        });
+      }
+
+      // --- Event klik semua episode ---
+      const episodeLinks = document.querySelectorAll('.anime-episodes a[data-ep-link]');
+      episodeLinks.forEach(link => {
+        link.addEventListener('click', e => {
+          e.preventDefault();
+          const epUrl = link.getAttribute('data-ep-link');
+          if (epUrl) {
+            sessionStorage.setItem('targetData', epUrl);
+            window.location.href = '/anime/preview.html';
+          }
+        });
+      });
+
+    } else {
+      animeDetailContainer.innerHTML = '<p class="text-center text-red-500">Info tidak ditemukan.</p>';
+    }
+  } catch (err) {
+    console.error(err);
+    animeDetailContainer.innerHTML = '<p class="text-center text-red-500">Terjadi kesalahan saat memuat detail.</p>';
+  }
+}
+
+if(id){
+  loadDetail();
+} else {
+  animeDetailContainer.innerHTML = '<p class="text-center text-red-500">ID Anime tidak ditemukan di URL.</p>';
+}
+
+document.getElementById('searchForm').addEventListener('submit', e => {
+  e.preventDefault();
+  const query = document.getElementById('searchInput').value.trim();
+  if (!query) return;
+  sessionStorage.setItem('searchQuery', query);
+  window.location.href = `/anime/search.html`;
+});
+</script>
+
+</body>
+</html>

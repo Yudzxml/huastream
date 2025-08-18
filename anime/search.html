@@ -1,0 +1,979 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cari Anime Favoritmu Di - HUASTREAM.YYDZ</title>
+  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+  <!-- Tailwind CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.2/dist/tailwind.min.css" rel="stylesheet">
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+  <!-- Font Awesome 6 -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+<style>
+  *,
+*::before,
+*::after { box-sizing: border-box; }
+
+:root{
+  --bg:#f6f8fb;
+  --surface: rgba(255,255,255,0.85);
+  --text:#0f1724;
+  --muted:#6b7280;
+  --accent1:#2563eb;
+  --accent2:#7c3aed;
+  --glass: rgba(255,255,255,0.6);
+}
+
+html,body{ height:100%; }
+
+body{
+  margin:0;
+  font-family:'Poppins', 'Inter', system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+  background: linear-gradient(180deg,#fbfdff 0%, #eef6ff 40%, var(--bg) 100%);
+  color:var(--text);
+  -webkit-font-smoothing:antialiased;
+  -moz-osx-font-smoothing:grayscale;
+  line-height:1.4;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.container{
+  max-width:1200px;
+  margin:0 auto;
+  padding:0 1rem;
+}
+
+header{
+  position:sticky;
+  top:0;
+  z-index:60;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:1rem;
+  padding:.65rem 0;
+  backdrop-filter: blur(8px) saturate(120%);
+  background: linear-gradient(180deg, rgba(255,255,255,0.7), rgba(255,255,255,0.55));
+  border-bottom: 1px solid rgba(15,23,42,0.04);
+  transition: box-shadow .22s ease, transform .18s ease;
+}
+
+header.elev{ box-shadow: 0 8px 30px rgba(15,23,42,0.06); transform: translateY(-1px); }
+
+header h1{
+  display:flex;
+  align-items:center;
+  gap:.6rem;
+  margin:0;
+  font-weight:800;
+  font-size:1.25rem;
+  letter-spacing:-0.2px;
+  background: linear-gradient(90deg,var(--accent1),var(--accent2));
+  -webkit-background-clip:text;
+  background-clip:text;
+  color:transparent;
+}
+
+.logo-badge{
+  display:inline-grid;
+  place-items:center;
+  width:36px;
+  height:36px;
+  border-radius:10px;
+  background: linear-gradient(135deg, rgba(37,99,235,0.12), rgba(124,58,237,0.10));
+  box-shadow: 0 6px 18px rgba(37,99,235,0.08);
+  color:var(--accent1);
+  font-size:1rem;
+}
+
+#searchForm{
+  display:flex;
+  align-items:center;
+  gap:.3rem;
+  padding:3px 6px;
+  border-radius:9999px;
+  background: var(--surface);
+  box-shadow: 0 6px 18px rgba(2,6,23,0.04);
+  border: 1px solid rgba(15,23,42,0.05);
+  transition: box-shadow .18s ease, transform .18s ease;
+  max-width: 260px; 
+}
+
+#searchForm:focus-within{
+  box-shadow: 0 10px 28px rgba(37,99,235,0.08);
+  transform: translateY(-1.5px);
+  border-color: rgba(99,102,241,0.12);
+}
+
+#searchInput{
+  background: transparent;
+  border: none;
+  padding:.4rem .6rem;
+  width: 100%;
+  max-width: 180px;
+  font: 500 .9rem/1.2 'Inter', system-ui, sans-serif;
+  color:var(--text);
+  caret-color: var(--accent1);
+  outline: none;
+}
+
+#searchBtn{
+  display:inline-flex;
+  align-items:center;
+  gap:.3rem;
+  border:none;
+  padding:.4rem .7rem;
+  border-radius:9999px;
+  font-weight:600;
+  font-size:.85rem;
+  color:#fff;
+  background: linear-gradient(90deg,var(--accent1),var(--accent2));
+  cursor:pointer;
+  box-shadow: 0 8px 20px rgba(37,99,235,0.1);
+  transition: transform .14s cubic-bezier(.2,.8,.2,1), box-shadow .14s ease;
+}
+
+#searchBtn:hover{ transform: translateY(-2px); box-shadow: 0 14px 28px rgba(37,99,235,0.14); }
+#searchBtn:active{ transform: translateY(0); box-shadow: 0 6px 16px rgba(37,99,235,0.1); }
+
+@media (max-width:880px){
+  .container{ padding:0 .9rem; }
+  #searchForm{ max-width: 100%; }
+  #searchInput{ max-width: 100%; }
+}
+
+@media (max-width:640px){
+  header{ flex-direction:column; align-items:stretch; gap:.6rem; padding:.6rem 0; }
+  header h1{ justify-content:center; width:100%; }
+  #searchForm{ width:100%; max-width: 100%; } 
+  #searchInput{ flex:1; width:100%; }
+  #searchBtn{ padding:.5rem .7rem; font-size:.85rem; }
+}
+
+@media (prefers-color-scheme: dark){
+  :root{ --text:#e6eef8; --muted:#9ca3af; --bg:#071025; --surface: rgba(10,14,20,0.55); }
+  body{ background: linear-gradient(180deg,#041226 0%, #071025 60%); color:var(--text); }
+  header{ background: linear-gradient(180deg, rgba(8,10,15,0.6), rgba(6,8,12,0.55)); border-bottom: 1px solid rgba(255,255,255,0.03); }
+  #searchForm{ background: var(--surface); border: 1px solid rgba(255,255,255,0.03); box-shadow: 0 10px 30px rgba(2,6,23,0.45); }
+  #searchInput{ color:var(--text); }
+}
+
+.gradient-icon {
+  background: linear-gradient(90deg, #3b82f6, #06b6d4);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+html, body {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+main {
+  flex: 1;
+  padding: 1rem;
+}
+
+.footer {
+  background-color: var(--bg);
+  color: var(--text);
+  text-align: center;
+  padding: 1rem 0 0; 
+  border-radius: 1rem 1rem 0 0;
+  font-family: 'Poppins', sans-serif;
+  position: relative;
+  flex-shrink: 0;
+}
+
+.footer .container {
+  max-width: 600px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  align-items: center;
+  padding: 0.75rem 1rem;
+  border-radius: 1rem;
+  transition: box-shadow 0.2s ease, transform 0.15s ease;
+}
+
+.footer .container:active {
+  box-shadow: 0 8px 20px rgba(37,99,235,0.3);
+  transform: translateY(-1px);
+}
+
+.footer .copyright {
+  font-size: 0.8rem;
+}
+.footer p {
+  margin: 0.5rem 0;
+}
+.footer .contact-icons {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  font-size: 1.3rem;
+}
+
+.footer .contact-icons a {
+  transition: transform 0.2s;
+  background: linear-gradient(90deg, var(--accent1), var(--accent2));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.footer .contact-icons a:active {
+  transform: scale(1.2);
+}
+
+.footer .team {
+  font-size: 0.75rem;
+}
+
+.footer::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 50px;
+  background-color: var(--bg);
+  z-index: -1;
+}
+
+.gradient-text {
+  transition: transform 0.2s;
+  background: linear-gradient(90deg, var(--accent1), var(--accent2));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+@media (prefers-color-scheme: dark) {
+  .footer {
+    background-color: var(--surface, #0a0e14);
+    color: var(--text, #e6eef8);
+  }
+}
+</style>
+<style>
+.anime-card {
+  background: var(--surface);
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 6px 18px rgba(2,6,23,0.04);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+  cursor: pointer;
+  padding: 0.5rem;
+  height: 100%;
+}
+
+.anime-card:hover {
+  transform: translateY(-2px) scale(1.02);
+  box-shadow: 0 14px 28px rgba(37,99,235,0.14);
+}
+
+.anime-img {
+  width: 100%;
+  height: 160px;
+  object-fit: cover;
+  border-radius: 10px;
+  transition: transform 0.25s ease;
+  margin-bottom: 0.5rem;
+}
+
+.anime-card:hover .anime-img {
+  transform: scale(1.05);
+}
+
+.anime-card h3 {
+  font-size: 0.95rem;
+  font-weight: 600;
+  margin: 0.25rem 0;
+  text-align: center;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.anime-card p {
+  font-size: 0.75rem;
+  color: var(--muted);
+  line-height: 1rem;
+  text-align: center;
+  margin: 0.15rem 0;
+}
+
+.anime-card p.genres {
+  font-size: 0.72rem;
+  color: var(--accent1);
+  text-align: center;
+  margin: 0.2rem 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.anime-card a {
+  display: block;
+  text-align: center;
+  padding: 0.3rem 0.6rem;
+  border-radius: 9999px;
+  background: linear-gradient(90deg, var(--accent1), var(--accent2));
+  color: #fff;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-decoration: none;
+  margin-top: auto;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.anime-card a:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(37,99,235,0.1);
+}
+
+#searchResults {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 1rem;
+  margin-top: 0.5rem;
+}
+
+@media (max-width: 640px) {
+  .anime-card {
+    padding: 0.4rem;
+  }
+  .anime-img {
+    height: 130px;
+  }
+  .anime-card h3 {
+    font-size: 0.85rem;
+  }
+  .anime-card p, .anime-card a {
+    font-size: 0.7rem;
+  }
+}
+
+@media (prefers-color-scheme: dark) {
+  .anime-card {
+    background: var(--surface);
+    box-shadow: 0 6px 18px rgba(0,0,0,0.3);
+  }
+  .anime-card h3 { color: var(--text); }
+  .anime-card p { color: var(--muted); }
+  .anime-card p.genres { color: var(--accent2); }
+}
+</style>
+<style>
+/* Tombol Prev / Next */
+#latestAnimeNav {
+  display: none;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+.page-btn {
+  padding: 0.4rem 0.8rem;
+  border-radius: 9999px;
+  font-weight: 600;
+  font-size: 0.85rem;
+  color: #fff;
+  background: linear-gradient(90deg, var(--accent1), var(--accent2));
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, opacity 0.15s ease;
+  border: none;
+}
+
+.page-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(37,99,235,0.14);
+}
+
+.page-btn:active:not(:disabled) {
+  transform: translateY(0);
+  box-shadow: 0 6px 16px rgba(37,99,235,0.1);
+}
+
+.page-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+#currentPage {
+  padding: 0.4rem 0.8rem;
+  border-radius: 9999px;
+  background-color: rgba(0,0,0,0.05);
+  color: var(--text);
+  font-weight: 500;
+}
+
+@media (prefers-color-scheme: dark) {
+  #currentPage {
+    background-color: rgba(255,255,255,0.1);
+    color: var(--text);
+  }
+}
+
+.rekom-text {
+  display: inline-block;
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  background: linear-gradient(90deg, var(--accent1), var(--accent2));
+  color: white;
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-align: center;
+  margin: 0 auto;
+  transition: transform 0.2s, box-shadow 0.2s;
+  box-shadow: 0 2px 6px rgba(37, 99, 235, 0.3);
+}
+
+.rekom-text:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 10px rgba(37, 99, 235, 0.5);
+}
+
+.rekom-text-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+.searchIcon-text {
+  display: inline-block;
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  background: linear-gradient(90deg, var(--accent1), var(--accent2));
+  color: white;
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-align: center;
+  margin: 0 auto;
+  transition: transform 0.2s, box-shadow 0.2s;
+  box-shadow: 0 2px 6px rgba(37, 99, 235, 0.3);
+}
+
+.searchIcon-text:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 10px rgba(37, 99, 235, 0.5);
+}
+
+.searchIcon-text-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+</style>
+<style>
+  /* Style radio button custom */
+.form-radio {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  width: 20px;
+  height: 20px;
+  border: 2px solid var(--muted);
+  border-radius: 50%;
+  background: var(--surface);
+  cursor: pointer;
+  position: relative;
+  transition: all 0.2s ease;
+  display: inline-block;
+  vertical-align: middle;
+}
+
+.form-radio:hover {
+  border-color: var(--accent1);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+}
+
+.form-radio:checked {
+  border-color: transparent;
+  background: linear-gradient(135deg, var(--accent1), var(--accent2));
+}
+
+.form-radio:checked::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 10px;
+  height: 10px;
+  background: white;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+}
+
+label {
+  font-weight: 500;
+  font-size: 0.9rem;
+  color: var(--text);
+  transition: color 0.2s ease;
+}
+
+label:hover {
+  color: var(--accent1);
+}
+
+/* Flex wrapping for mobile responsiveness */
+.flex-wrap label {
+  padding: 0.25rem 0.5rem;
+  border-radius: 9999px;
+  transition: background 0.2s, transform 0.15s;
+}
+
+.flex-wrap label:hover {
+  background: rgba(37, 99, 235, 0.08);
+  transform: translateY(-1px);
+}
+</style>
+<style>
+/* --- Container Centering --- */
+.genre-container {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center; /* center horizontal */
+  gap: 12px;
+  margin-bottom: 1rem;
+}
+
+/* --- Radio Button Custom --- */
+.form-radio {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 18px;
+  height: 18px;
+  border: 2px solid var(--muted);
+  border-radius: 50%;
+  background-color: var(--surface);
+  position: relative;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.form-radio:checked {
+  border-color: var(--accent1);
+  background: linear-gradient(90deg, var(--accent1), var(--accent2));
+}
+
+.form-radio:checked::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 8px;
+  height: 8px;
+  background-color: white;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+}
+
+/* Hover effect */
+.form-radio:hover {
+  border-color: var(--accent1);
+  box-shadow: 0 2px 6px rgba(37,99,235,0.2);
+}
+
+/* --- Label Styling --- */
+label {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--text);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  transition: color 0.2s ease;
+}
+
+label:hover {
+  color: var(--accent1);
+}
+
+/* --- Button Cari Container --- */
+.button-container {
+  display: flex;
+  justify-content: center; /* center horizontal */
+  margin-top: 1rem;
+}
+
+/* --- Button Cari Styling --- */
+#filterGenre {
+  padding: 0.6rem 1.6rem;
+  border: none;
+  border-radius: 50px; /* bulat panjang modern */
+  font-weight: 600;
+  font-size: 1rem;
+  color: #fff;
+  background: linear-gradient(90deg, var(--accent1), var(--accent2));
+  cursor: pointer;
+  box-shadow: 0 6px 18px rgba(37,99,235,0.15);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center; /* teks & icon sejajar tengah */
+  gap: 0.5rem;             /* jarak icon & teks */
+  transition: transform 0.15s cubic-bezier(.2,.8,.2,1), 
+              box-shadow 0.15s ease,
+              background 0.3s ease;
+}
+
+/* Hover Effect */
+#filterGenre:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 26px rgba(37,99,235,0.18);
+  background: linear-gradient(90deg, var(--accent2), var(--accent1));
+}
+
+/* Active Effect */
+#filterGenre:active {
+  transform: translateY(1px);
+  box-shadow: 0 6px 16px rgba(37,99,235,0.12);
+}
+
+/* Responsive tweak */
+@media (max-width: 640px) {
+  #filterGenre {
+    padding: 0.5rem 1.2rem;
+    font-size: 0.9rem;
+  }
+}
+</style>
+
+</head>
+<body class="text-gray-900">
+
+  <!-- Header -->
+  <header class="bg-white shadow p-4 flex justify-between items-center sticky top-0 z-50">
+    <h1 class="text-2xl font-bold text-blue-600 flex items-center gap-2">
+      HUASTREAM.YYDZ
+    </h1>
+    <form id="searchForm" class="flex items-center">
+      <input type="text" id="searchInput" placeholder="Cari Donghua atau Anime..." class="focus:outline-none px-2 py-1 border rounded" required>
+      <button type="submit" id="searchBtn" class="bg-blue-600 text-white px-3 py-2 hover:bg-blue-700 flex items-center gap-1">
+        <i class="fas fa-search"></i> Cari
+      </button>
+    </form>
+  </header>
+
+<main class="p-4 space-y-8">
+  <!-- Section Pencarian Genre -->
+<section class="my-4">
+  <div class="rekom-text-container mb-2 text-center">
+    <h2 class="rekom-text text-lg font-semibold flex items-center justify-center gap-2">
+      <i class="fas fa-filter"></i> CARI BERDASARKAN GENRE
+    </h2>
+  </div>
+<div class="genre-container">
+  <label>
+    <input type="radio" name="genre" value="action" class="form-radio">
+    Action
+  </label>
+  <label>
+    <input type="radio" name="genre" value="adventure" class="form-radio">
+    Adventure
+  </label>
+  <label>
+    <input type="radio" name="genre" value="comedy" class="form-radio">
+    Comedy
+  </label>
+  <label>
+    <input type="radio" name="genre" value="drama" class="form-radio">
+    Drama
+  </label>
+  <label>
+    <input type="radio" name="genre" value="fantasy" class="form-radio">
+    Fantasy
+  </label>
+  <label>
+    <input type="radio" name="genre" value="shounen" class="form-radio">
+    Shounen
+  </label>
+  <label>
+    <input type="radio" name="genre" value="romance" class="form-radio">
+    Romance
+  </label>
+  <label>
+    <input type="radio" name="genre" value="school" class="form-radio">
+    School
+  </label>
+  <label>
+    <input type="radio" name="genre" value="supernatural" class="form-radio">
+    Supernatural
+  </label>
+  <label>
+    <input type="radio" name="genre" value="isekai" class="form-radio">
+    Isekai
+  </label>
+  <label>
+    <input type="radio" name="genre" value="sci-fi" class="form-radio">
+    Sci-Fi
+  </label>
+  <label>
+    <input type="radio" name="genre" value="seinen" class="form-radio">
+    Seinen
+  </label>
+  <label>
+    <input type="radio" name="genre" value="reincarnation" class="form-radio">
+    Reincarnation
+  </label>
+  <label>
+    <input type="radio" name="genre" value="mystery" class="form-radio">
+    Mystery
+  </label>
+  <label>
+    <input type="radio" name="genre" value="historical" class="form-radio">
+    Historical
+  </label>
+  <label>
+    <input type="radio" name="genre" value="super-power" class="form-radio">
+    Super Power
+  </label>
+  <label>
+    <input type="radio" name="genre" value="slice-of-life" class="form-radio">
+    Slice of Life
+  </label>
+  <label>
+    <input type="radio" name="genre" value="ecchi" class="form-radio">
+    Ecchi
+  </label>
+  <label>
+    <input type="radio" name="genre" value="harem" class="form-radio">
+    Harem
+  </label>
+  <label>
+    <input type="radio" name="genre" value="sports" class="form-radio">
+    Sports
+  </label>
+</div>
+
+  <div class="button-container">
+  <button id="filterGenre">
+    <i class="fas fa-search"></i> Cari
+  </button>
+</div>
+</section>
+
+  <!-- Section Hasil Search -->
+  <section class="my-4">
+<div class="searchIcon-text-container mb-2 text-center">
+  <h2 class="searchIcon-text text-lg font-semibold flex items-center justify-center gap-2" style="display: none; transform: translateY(9px);">
+    <i class="fas fa-search"></i> HASIL PENCARIAN
+  </h2>
+</div>
+
+    <div id="searchResults" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+      <!-- Card anime akan di-render di sini -->
+    </div>
+
+    <!-- Pagination -->
+    <div id="latestAnimeNav" class="flex justify-center items-center gap-3 mt-4">
+      <button id="prevPage" class="page-btn px-3 py-1 rounded-full bg-gradient-to-r from-blue-500 to-indigo-500 text-white font-semibold disabled:opacity-50 disabled:cursor-not-allowed">Prev</button>
+      <span id="currentPage" class="px-3 py-1 rounded-md bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200">1</span>
+      <button id="nextPage" class="page-btn px-3 py-1 rounded-full bg-gradient-to-r from-blue-500 to-indigo-500 text-white font-semibold disabled:opacity-50 disabled:cursor-not-allowed">Next</button>
+    </div>
+  </section>
+</main>
+
+  <!-- Footer / Copyright & Contact -->
+  <footer class="footer bg-gray-100 py-4 mt-8">
+    <div class="container mx-auto text-center space-y-2">
+      <p class="copyright">
+        © 2025 <strong>HUASTREAM.YYDZ</strong>. All rights reserved.
+      </p>
+      <p class="contact-icons flex justify-center gap-4 text-xl">
+        <a href="https://wa.me/6283872031397" target="_blank" class="icon-gradient"><i class="fab fa-whatsapp"></i></a>
+        <a href="https://t.me/Yudzxzy" target="_blank" class="icon-gradient"><i class="fab fa-telegram-plane"></i></a>
+        <a href="mailto:yudaaryaardhana1122@email.com" class="icon-gradient"><i class="fas fa-envelope"></i></a>
+      </p>
+      <p class="team">
+        Design & development <span class="font-semibold gradient-text">Tim Yudzxml</span>
+      </p>
+    </div>
+  </footer>
+
+<script>
+const searchForm = document.getElementById('searchForm');
+const labelSearch = document.querySelector('.searchIcon-text');
+const searchInput = document.getElementById('searchInput');
+const animeListDiv = document.getElementById('searchResults');
+const prevBtn = document.getElementById('prevPage');
+const nextBtn = document.getElementById('nextPage');
+const currentPageSpan = document.getElementById('currentPage');
+const pagination = document.getElementById('latestAnimeNav');
+const filterBtn = document.getElementById('filterGenre');
+const enpointBase = `https://api.yudzxyz.x-server.my.id`;
+const apiSearchBase = enpointBase + '/api/samehadaku?action=search&query=';
+const apiGenreBase = enpointBase + '/api/samehadaku?action=genre&genre=';
+
+let currentPage = 1;
+let currentQuery = '';
+let currentGenre = '';
+
+// ===== Fungsi fetch data =====
+async function fetchAnimeBySearch(query, page = 1) {
+  try {
+    const res = await fetch(`${apiSearchBase}${encodeURIComponent(query)}&page=${page}`);
+    const data = await res.json();
+    return data.status === 200 && data.result ? JSON.parse(data.result) : [];
+  } catch (err) {
+    console.error('Error fetch search:', err);
+    return [];
+  }
+}
+
+async function fetchAnimeByGenre(genre, page = 1) {
+  try {
+    const res = await fetch(`${apiGenreBase}${genre}&page=${page}`);
+    const data = await res.json();
+    return data.status === 200 && data.result ? JSON.parse(data.result).animeList : [];
+  } catch (err) {
+    console.error('Error fetch genre:', err);
+    return [];
+  }
+}
+
+// ===== Render hasil ke HTML =====
+function renderAnimeList(animeList) {
+  if (!animeList || animeList.length === 0) {
+    animeListDiv.innerHTML = '<p>Tidak ada anime ditemukan.</p>';
+    pagination.style.display = 'none';
+    labelSearch.style.display = 'none';
+    return;
+  }
+
+  animeListDiv.innerHTML = animeList.map(anime => `
+  <div class="anime-card">
+    <img src="${anime.thumbnail || anime.img}" alt="${anime.title}" width="150">
+    <h3>${anime.title}</h3>
+    <p>${anime.description || ''}</p>
+    <p>Type: ${anime.type || ''} | Score: ${anime.score || ''} | Status: ${anime.status || ''}</p>
+    <p class="genres">${anime.genres ? anime.genres.join(', ') : ''}</p>
+    ${anime.link ? `<a href="#" class="watch-link" data-url="${anime.link}">Watch Now</a>` : ''}
+  </div>
+`).join('');
+
+document.querySelectorAll('.watch-link').forEach(link => {
+  link.addEventListener('click', e => {
+    e.preventDefault(); 
+    const targetUrl = link.dataset.url;
+    if (targetUrl) {
+      sessionStorage.setItem('targetData', targetUrl); 
+      window.location.href = '/anime/info.html';
+    }
+  });
+});
+  labelSearch.style.display = 'inline-block';
+  pagination.style.display = 'flex';
+  currentPageSpan.textContent = currentPage;
+  prevBtn.disabled = currentPage === 1;
+}
+function renderAnimeGenre(animeList) {
+  if (!animeList || animeList.length === 0) {
+    animeListDiv.innerHTML = '<p>Tidak ada anime ditemukan.</p>';
+    labelSearch.style.display = 'none';
+    pagination.style.display = 'none';
+    return;
+  }
+
+  animeListDiv.innerHTML = animeList.map(anime => `
+  <div class="anime-card">
+    <img src="${anime.thumbnail}" alt="${anime.title}" width="150">
+    <h3>${anime.title}</h3>
+    <p>${anime.description || ''}</p>
+    <p>Type: ${anime.type || ''} | Score: ${anime.score || ''} | Status: ${anime.status || ''} | Views: ${anime.views || ''}</p>
+    <p class="genres">${anime.genres ? anime.genres.join(', ') : ''}</p>
+    ${anime.url ? `<a href="#" class="watch-link" data-url="${anime.url}">Watch Now</a>` : ''}
+  </div>
+`).join('');
+
+document.querySelectorAll('.watch-link').forEach(link => {
+  link.addEventListener('click', e => {
+    e.preventDefault();
+    const targetUrl = link.dataset.url;
+    if (targetUrl) {
+      sessionStorage.setItem('targetData', targetUrl);
+      window.location.href = '/anime/info.html'; 
+    }
+  });
+});
+  
+  labelSearch.style.display = 'inline-block';
+  pagination.style.display = 'flex';
+  currentPageSpan.textContent = currentPage;
+  prevBtn.disabled = currentPage === 1;
+}
+// ===== Load data berdasarkan kondisi =====
+async function loadAnime() {
+  try {
+    let animeList = [];
+
+    if (currentQuery) {
+      animeList = await fetchAnimeBySearch(currentQuery, currentPage);
+      renderAnimeList(animeList);
+    } else if (currentGenre) {
+      animeList = await fetchAnimeByGenre(currentGenre, currentPage);
+      renderAnimeGenre(animeList);
+    } else {
+      console.warn('Tidak ada query atau genre');
+    }
+
+  } catch (err) {
+    console.error('Gagal load anime:', err);
+  }
+}
+
+// ===== Event handler =====
+searchForm.addEventListener('submit', e => {
+  e.preventDefault();
+  const query = searchInput.value.trim();
+  if (query) {
+    currentQuery = query;
+    currentGenre = '';
+    currentPage = 1;
+    sessionStorage.setItem('searchQuery', query);
+    animeListDiv.innerHTML = '<p>Loading....</p>';
+    loadAnime();
+  }
+});
+
+filterBtn.addEventListener('click', () => {
+  const selectedGenre = document.querySelector('input[name="genre"]:checked');
+  if (!selectedGenre) {
+    alert('Silakan pilih genre terlebih dahulu!');
+    return;
+  }
+  currentGenre = selectedGenre.value;
+  currentQuery = '';
+  currentPage = 1;
+  animeListDiv.innerHTML = '<p>Loading....</p>';
+  loadAnime();
+});
+
+// ===== Pagination =====
+prevBtn.onclick = () => { if (currentPage > 1) { currentPage--; loadAnime(); } };
+nextBtn.onclick = () => { currentPage++; loadAnime(); };
+
+// ===== Load saved query =====
+const savedQuery = sessionStorage.getItem('searchQuery');
+if (savedQuery) {
+  searchInput.value = savedQuery;
+  currentQuery = savedQuery;
+  animeListDiv.innerHTML = '<p>Loading....</p>';
+  loadAnime();
+}
+</script>
+</body>
+</html>
