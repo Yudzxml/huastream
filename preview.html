@@ -1065,12 +1065,12 @@ sidebarContainer.innerHTML = `
           <div class="episode-thumb-wrapper">
             <img src="${ep.thumbnail}" alt="${ep.title}" class="episode-thumb">
           </div>
-          <div class="episode-info">
-            <a href="?url=${encodeURIComponent(ep.link)}" class="episode-link">
-              <p class="episode-title">${ep.title}</p>
-            </a>
-            <p class="episode-date">${ep.date}</p>
-          </div>
+<div class="episode-info">
+  <a href="#" class="episode-link" data-link="${ep.link}">
+    <p class="episode-title">${ep.title}</p>
+  </a>
+  <p class="episode-date">${ep.date}</p>
+</div>
         </li>
       `).join('')}
     </ul>
@@ -1083,12 +1083,22 @@ sidebarContainer.innerHTML = `
   }
 }
 
+sidebarContainer.addEventListener('click', e => {
+  const link = e.target.closest('.episode-link');
+  if(!link) return;
+  e.preventDefault();
+  const epLink = link.dataset.link;
+  if(!epLink) return;
+  sessionStorage.setItem('targetData', epLink);
+  window.location.href = 'preview.html';
+});
+
 document.getElementById('searchForm').addEventListener('submit', e => {
   e.preventDefault();
   const query = document.getElementById('searchInput').value.trim();
   if (!query) return;
   sessionStorage.setItem('searchQuery', query);
-  window.location.href = '/search.html';
+  window.location.href = `/search.html?q=${query}`;
 });
 
 loadEpisode(epUrl);

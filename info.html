@@ -727,7 +727,7 @@ document.getElementById('searchForm').addEventListener('submit', e => {
   const query = document.getElementById('searchInput').value.trim();
   if (!query) return;
   sessionStorage.setItem('searchQuery', query);
-  window.location.href = '/search.html';
+  window.location.href = `/search.html?q=${query}`;
 });
 </script>
 
