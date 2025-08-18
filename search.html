@@ -466,27 +466,25 @@ const cardTemplate = document.getElementById('cardTemplate');
 function createCard(item) {
   const card = cardTemplate.content.cloneNode(true);
 
-  // Image
   const imgWrapper = card.querySelector('.img-wrapper');
   const imgEl = imgWrapper.querySelector('img');
   imgEl.src = item.image;
   imgEl.alt = item.title;
 
-  // Episode / Latest / SubOrDub badge
   const episodeLabel = card.querySelector('.episode-label');
   episodeLabel.textContent = item.latest ? item.latest : (item.episode ? item.episode : '');
   if(item.subOrDub) episodeLabel.textContent += ` | ${item.subOrDub}`;
 
-  // Title
   const titleEl = card.querySelector('h3');
   titleEl.textContent = item.title;
 
-  // Genre
   const descEl = card.querySelector('p');
   descEl.textContent = item.genres || '';
+
   card.querySelector('div.bg-white')?.addEventListener('click', () => {
-  window.location.href = `info.html?id=${item.link}`;
-  });
+  sessionStorage.setItem('targetData', item.link);
+  window.location.href = 'info.html';
+});
 
   return card;
 }
@@ -514,15 +512,16 @@ async function performSearch(query){
 searchForm.addEventListener('submit', e=>{
   e.preventDefault();
   const query = searchInput.value.trim();
-  if(query) performSearch(query);
+  if(query) {
+    sessionStorage.setItem('searchQuery', query);
+    performSearch(query);
+  }
 });
 
-// Optional: jika ada query di URL
-const urlParams = new URLSearchParams(window.location.search);
-const q = urlParams.get('q');
-if(q){
-  searchInput.value = q;
-  performSearch(q);
+const savedQuery = sessionStorage.getItem('searchQuery');
+if(savedQuery){
+  searchInput.value = savedQuery;
+  performSearch(savedQuery);
 }
 </script>
 

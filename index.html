@@ -1115,19 +1115,31 @@ function createCard(item, type='default') {
 
   // Link sesuai type
   const cardWrapper = card.querySelector('.bg-white');
-  let targetUrl = null;
+let targetData = null;
+let targetPage = null;
 
-  if(type === 'popularToday' && item.watchLink) targetUrl = `preview.html?url=${encodeURIComponent(item.watchLink)}`;
-  else if(type === 'latestRelease' && item.url) targetUrl = `preview.html?url=${encodeURIComponent(item.url)}`;
-  else if(type === 'rekomendasi' && item.watchLink) targetUrl = `info.html?id=${encodeURIComponent(item.watchLink)}`;
-  else if(type === 'populerDonghua' && item.link) targetUrl = `info.html?id=${encodeURIComponent(item.link)}`;
+if(type === 'popularToday' && item.watchLink) {
+  targetData = item.watchLink;
+  targetPage = 'preview.html';
+} else if(type === 'latestRelease' && item.url) {
+  targetData = item.url;
+  targetPage = 'preview.html';
+} else if(type === 'rekomendasi' && item.watchLink) {
+  targetData = item.watchLink;
+  targetPage = 'info.html';
+} else if(type === 'populerDonghua' && item.link) {
+  targetData = item.link;
+  targetPage = 'info.html';
+}
 
-  if(targetUrl) {
-    cardWrapper.style.cursor = 'pointer';
-    cardWrapper.addEventListener('click', () => {
-      window.location.href = targetUrl;
-    });
-  }
+if(targetData && targetPage) {
+  cardWrapper.style.cursor = 'pointer';
+  cardWrapper.addEventListener('click', () => {
+    sessionStorage.setItem('targetData', targetData);
+    sessionStorage.setItem('targetPageType', type);
+    window.location.href = targetPage;
+  });
+}
 
   return card;
 }
@@ -1204,8 +1216,9 @@ fetchPopulerDonghua();
 document.getElementById('searchForm').addEventListener('submit', e => {
   e.preventDefault();
   const query = document.getElementById('searchInput').value.trim();
-  if(!query) return;
-  window.location.href = `/search.html?q=${encodeURIComponent(query)}`;
+  if (!query) return;
+  sessionStorage.setItem('searchQuery', query);
+  window.location.href = '/search.html';
 });
 </script>
 </body>

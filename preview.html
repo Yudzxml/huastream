@@ -982,8 +982,7 @@ main {
 const previewContainer = document.getElementById('previewPlayer');
 const mirrorButtonsContainer = document.getElementById('mirrorButtons');
 const sidebarContainer = document.getElementById('sidebarEpisodes');
-const params = new URLSearchParams(window.location.search);
-const epUrl = params.get('url') || "https://anichin.moe/renegade-immortal-episode-102-subtitle-indonesia/"
+const epUrl = sessionStorage.getItem('targetData');
 
 async function loadEpisode(url){
   if(!url){
@@ -1083,6 +1082,14 @@ sidebarContainer.innerHTML = `
     previewContainer.innerHTML = '<p class="text-center text-red-500">Terjadi kesalahan saat memuat episode.</p>';
   }
 }
+
+document.getElementById('searchForm').addEventListener('submit', e => {
+  e.preventDefault();
+  const query = document.getElementById('searchInput').value.trim();
+  if (!query) return;
+  sessionStorage.setItem('searchQuery', query);
+  window.location.href = '/search.html';
+});
 
 loadEpisode(epUrl);
 </script>

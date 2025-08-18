@@ -609,8 +609,7 @@ main {
 
 <script>
 const animeDetailContainer = document.getElementById('animeDetail');
-const urlParams = new URLSearchParams(window.location.search);
-const id = urlParams.get('id');
+const id = sessionStorage.getItem('targetData');
 
 const apiDetail = `https://api.yudzxyz.x-server.my.id/api/donghua?action=info&url=${id}`;
 
@@ -689,10 +688,11 @@ async function loadDetail(){
       // Event klik tombol Nonton EPS 1
       const btnWatch = document.querySelector('.btn-watch-ep1');
       if(btnWatch && firstEpisodeLink !== '#'){
-        btnWatch.addEventListener('click', () => {
-          window.location.href = `preview.html?url=${encodeURIComponent(firstEpisodeLink)}`;
-        });
-      }
+  btnWatch.addEventListener('click', () => {
+    sessionStorage.setItem('targetData', firstEpisodeLink);
+    window.location.href = 'preview.html';
+  });
+}
 
       // Event klik semua episode
       const episodeLinks = document.querySelectorAll('.anime-episodes a[data-ep-link]');
@@ -700,9 +700,10 @@ async function loadDetail(){
         link.addEventListener('click', e => {
           e.preventDefault(); // cegah default klik
           const epUrl = link.getAttribute('data-ep-link');
-          if(epUrl){
-            window.location.href = `preview.html?url=${encodeURIComponent(epUrl)}`;
-          }
+if(epUrl){
+  sessionStorage.setItem('targetData', epUrl);
+  window.location.href = 'preview.html';
+}
         });
       });
 
@@ -720,6 +721,14 @@ if(id){
 } else {
   animeDetailContainer.innerHTML = '<p class="text-center text-red-500">ID Donghua tidak ditemukan di URL.</p>';
 }
+
+document.getElementById('searchForm').addEventListener('submit', e => {
+  e.preventDefault();
+  const query = document.getElementById('searchInput').value.trim();
+  if (!query) return;
+  sessionStorage.setItem('searchQuery', query);
+  window.location.href = '/search.html';
+});
 </script>
 
 </body>
