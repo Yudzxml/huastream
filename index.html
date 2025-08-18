@@ -2,11 +2,84 @@
 <html lang="id">
 <head>
   <meta charset="UTF-8">
-  <!-- Redirect ke folder donghua -->
-  <meta http-equiv="refresh" content="0; url=donghua/home.html">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Redirecting...</title>
+  <style>
+    /* Reset */
+    *, *::before, *::after { box-sizing: border-box; margin:0; padding:0; }
+
+    body {
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      font-family: 'Poppins', sans-serif;
+      background: linear-gradient(135deg, #0a0f1a, #1a2233);
+      color: #fff;
+      text-align: center;
+    }
+
+    /* Logo teks */
+    .logo-text {
+      font-size: 2rem; /* tidak terlalu besar */
+      font-weight: 700;
+      background: linear-gradient(90deg, #2563eb, #7c3aed);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 25px;
+      text-shadow: 1px 1px 8px rgba(0,0,0,0.3);
+    }
+
+    /* Spinner */
+    .spinner {
+      border: 6px solid rgba(255,255,255,0.2);
+      border-top: 6px solid #2563eb;
+      border-radius: 50%;
+      width: 50px;
+      height: 50px;
+      animation: spin 1s linear infinite;
+      margin-bottom: 20px;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    h1 {
+      font-size: 1.5rem;
+      color: #7c3aed;
+      margin-bottom: 10px;
+    }
+
+    p {
+      font-size: 1rem;
+      margin-bottom: 5px;
+      color: #ccc;
+    }
+
+    a {
+      color: #2563eb;
+      text-decoration: underline;
+      font-weight: 600;
+    }
+    a:hover {
+      color: #7c3aed;
+    }
+  </style>
+  <script>
+    // Redirect otomatis ke home.html setelah 3 detik
+    setTimeout(() => {
+      window.location.href = "donghua/home.html";
+    }, 3000);
+  </script>
 </head>
 <body>
-  <p>Redirecting ke <a href="donghua/home.html">home.html</a>…</p>
+  <div class="logo-text">HUASTREAM.YYDZ</div>
+  <div class="spinner"></div>
+  <h1>Redirecting...</h1>
+  <p>Kamu akan diarahkan ke halaman <strong>Home Donghua</strong> dalam beberapa detik.</p>
+  <p>Jika tidak otomatis, klik <a href="donghua/home.html">di sini</a>.</p>
 </body>
 </html>
