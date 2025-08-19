@@ -822,25 +822,48 @@ header,
 <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
 
 <script>
- const apiBase = `https://api.yudzxyz.x-server.my.id/api`;
- 
+const apiBase = `https://api.yudzxyz.x-server.my.id/api`;
+const PAGE_LIMIT = 10;
+
+// ===============================
+// 📌 State + Helper
+// ===============================
+let currentPage = Number(sessionStorage.getItem("currentPage")) || 1;
+
+function setPage(page) {
+  currentPage = page;
+  sessionStorage.setItem("currentPage", page);
+  loadLatestAnime(page);
+}
+
+// ===============================
+// 📌 Jadwal Anime Hari Ini
+// ===============================
 async function loadScheduleAnime() {
   const container = document.getElementById("scheduleAnime");
+  container.innerHTML = `<p class="col-span-full text-center">⏳ Memuat jadwal...</p>`;
+
   try {
-    const res = await fetch(apiBase + "/samehadaku?action=jadwalupdate");
-    const data = await res.json();
-    const days = JSON.parse(data.result);
-    if (!days || days.length === 0) {
-      container.innerHTML = "<p class='col-span-full text-center'>Tidak ada jadwal tersedia.</p>";
+    const res = await axios.get(apiBase + "/samehadaku?action=jadwalupdate");
+    let days;
+    try {
+      days = JSON.parse(res.data.result);
+    } catch {
+      container.innerHTML = `<p class="col-span-full text-center text-red-500">⚠️ Data jadwal tidak valid.</p>`;
       return;
     }
 
-    const dayNames = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
-    const todayName = dayNames[new Date().getDay()];
+    if (!Array.isArray(days) || days.length === 0) {
+      container.innerHTML = `<p class="col-span-full text-center">Tidak ada jadwal tersedia.</p>`;
+      return;
+    }
 
-    const today = days.find(day => day.name.toLowerCase() === todayName.toLowerCase());
+    const dayNames = ['Minggu','Senin','Selasa','Rabu','Kamis','Jumat','Sabtu'];
+    const todayName = dayNames[new Date().getDay()];
+    const today = days.find(d => d.name.toLowerCase() === todayName.toLowerCase());
+
     if (!today) {
-      container.innerHTML = "<p class='col-span-full text-center'>Tidak ada jadwal anime untuk hari ini.</p>";
+      container.innerHTML = `<p class="col-span-full text-center">Tidak ada jadwal anime untuk hari ini.</p>`;
       return;
     }
 
@@ -850,8 +873,8 @@ async function loadScheduleAnime() {
           <i class="fa fa-calendar-day mr-2"></i> ${today.name}
         </h2>
         <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
-          ${today.anime.map((anime, index) => `
-            <div class="anime-card bg-white dark:bg-gray-800 shadow rounded-xl overflow-hidden cursor-pointer transition-transform hover:scale-105" data-index="${index}">
+          ${today.anime.map((anime, i) => `
+            <div class="anime-card bg-white dark:bg-gray-800 shadow rounded-xl overflow-hidden cursor-pointer transition-transform hover:scale-105" data-index="${i}">
               <img src="${anime.image}" alt="${anime.title}" class="w-full h-40 object-cover">
               <div class="p-3">
                 <h3 class="font-semibold text-sm line-clamp-2">${anime.title}</h3>
@@ -861,7 +884,6 @@ async function loadScheduleAnime() {
                 <p class="text-xs text-gray-600 dark:text-gray-400 flex items-center">
                   <i class="fa fa-tag mr-1"></i> ${anime.genre || '-'}
                 </p>
-                <p class="text-xs text-gray-600 dark:text-gray-400 line-clamp-3 mt-1">${anime.description || ''}</p>
               </div>
             </div>
           `).join("")}
@@ -869,59 +891,78 @@ async function loadScheduleAnime() {
       </div>
     `;
 
-    const cards = container.querySelectorAll('.anime-card');
-    cards.forEach((card, i) => {
-      card.addEventListener('click', () => {
-        localStorage.setItem('targetData', JSON.stringify(today.anime[i]));
-        window.location.href = '/anime/info.html';
-      });
-    });
-
-  } catch (err) {
-    console.error(err);
-    container.innerHTML = "<p class='col-span-full text-center text-red-500'>Gagal memuat jadwal anime.</p>";
-  }
-}
-async function loadTopAnime() {
-  try {
-    const res = await axios.get(apiBase + "/samehadaku?action=gettopanime");
-    const topAnime = JSON.parse(res.data.result);
-    const container = document.getElementById("topAnime");
-
-    topAnime.forEach((anime, index) => {
-  const card = document.createElement('div');
-  card.className = 'anime-card p-2 rounded-xl shadow hover:scale-[1.02] transition relative cursor-pointer flex flex-col';
-  card.innerHTML = `
-    <img src="${anime.img}" alt="${anime.title}" class="rounded-lg w-full h-40 object-cover">
-    <span class="absolute top-2 left-2 bg-yellow-400 text-black text-xs font-bold px-2 py-1 rounded">#${index + 1}</span>
-    <div class="flex flex-col items-center mt-2 w-full">
-      <h3 class="text-sm font-semibold text-gray-800 dark:text-white truncate text-center">${anime.title}</h3>
-      <p class="text-xs text-yellow-500 mt-1 flex items-center justify-center">
-        <i class="fa fa-star mr-1"></i>${anime.rating}
-      </p>
-    </div>
-  `;
+    container.querySelectorAll('.anime-card').forEach((card, i) => {
   card.addEventListener('click', () => {
-    localStorage.setItem('targetData', JSON.stringify(anime));
+    const animeItem = today.anime[i];
+    let animeUrl = animeItem.url || animeItem.link || null;
+    if (!animeUrl) {
+      alert("Maaf, data anime ini tidak lengkap.");
+      return;
+    }
+    localStorage.setItem('targetData_schedule', JSON.stringify({ url: animeUrl }));
+    console.log('STORAGE TERSIMPAN: '+animeUrl)
     window.location.href = '/anime/info.html';
   });
-  container.appendChild(card);
 });
 
   } catch (err) {
     console.error(err);
+    container.innerHTML = `<p class="col-span-full text-center text-red-500">Gagal memuat jadwal anime.</p>`;
   }
 }
-let currentPage = 1;
+
+// ===============================
+// 📌 Top Anime
+// ===============================
+async function loadTopAnime() {
+  const container = document.getElementById("topAnime");
+  container.innerHTML = `<p class="text-center">⏳ Memuat top anime...</p>`;
+
+  try {
+    const res = await axios.get(apiBase + "/samehadaku?action=gettopanime");
+    const topAnime = JSON.parse(res.data.result);
+
+    container.innerHTML = "";
+    topAnime.forEach((anime, index) => {
+      const card = document.createElement('div');
+      card.className = 'anime-card p-2 rounded-xl shadow hover:scale-[1.02] transition relative cursor-pointer flex flex-col';
+      card.innerHTML = `
+        <img src="${anime.img}" alt="${anime.title}" class="rounded-lg w-full h-40 object-cover">
+        <span class="absolute top-2 left-2 bg-yellow-400 text-black text-xs font-bold px-2 py-1 rounded">#${index + 1}</span>
+        <div class="flex flex-col items-center mt-2 w-full">
+          <h3 class="text-sm font-semibold text-gray-800 dark:text-white truncate text-center">${anime.title}</h3>
+          <p class="text-xs text-yellow-500 mt-1 flex items-center justify-center">
+            <i class="fa fa-star mr-1"></i>${anime.rating}
+          </p>
+        </div>
+      `;
+      card.addEventListener('click', () => {
+        localStorage.setItem('targetData_top', JSON.stringify(anime));
+        window.location.href = '/anime/info.html';
+      });
+      container.appendChild(card);
+    });
+
+  } catch (err) {
+    console.error(err);
+    container.innerHTML = `<p class="text-center text-red-500">Gagal memuat top anime.</p>`;
+  }
+}
+
+// ===============================
+// 📌 Anime Terbaru + Pagination
+// ===============================
 async function loadLatestAnime(page = 1) {
+  const container = document.getElementById("latestAnime");
+  container.innerHTML = `<p class="text-center">⏳ Memuat anime terbaru...</p>`;
+
   try {
     const res = await axios.get(apiBase + `/samehadaku?action=latest&page=${page}`);
     const latestAnime = res.data.result;
-    const container = document.getElementById("latestAnime");
     container.innerHTML = '';
 
     if (!latestAnime || latestAnime.length === 0) {
-      container.innerHTML = '<p class="text-center text-gray-500 dark:text-gray-400">Tidak ada anime terbaru.</p>';
+      container.innerHTML = `<p class="text-center text-gray-500 dark:text-gray-400">Tidak ada anime terbaru.</p>`;
       document.getElementById('prevPage').disabled = page === 1;
       document.getElementById('nextPage').disabled = true;
       return;
@@ -929,58 +970,68 @@ async function loadLatestAnime(page = 1) {
 
     latestAnime.forEach(anime => {
       const card = document.createElement('div');
-      card.className = 'anime-card'; // pakai class utama dari CSS
-
+      card.className = 'anime-card';
       card.innerHTML = `
         <img src="${anime.image}" alt="${anime.title}">
-        <div style="padding:0.5rem;">
-          <h3>${anime.title}</h3>
+        <div class="p-2">
+          <h3 class="font-semibold">${anime.title}</h3>
           <p><i class="fa-solid fa-clapperboard"></i> Episode: ${anime.episode}</p>
           <p><i class="fa-regular fa-calendar"></i> ${anime.released}</p>
         </div>
       `;
-
       card.addEventListener('click', () => {
-        localStorage.setItem('targetData', JSON.stringify(anime));
+        localStorage.setItem('targetData_latest', JSON.stringify(anime));
         window.location.href = '/anime/info.html';
       });
-
       container.appendChild(card);
     });
 
-    // Update tombol prev/next
+    // Update pagination
     document.getElementById('currentPage').textContent = page;
     document.getElementById('prevPage').disabled = page === 1;
-    document.getElementById('nextPage').disabled = latestAnime.length === 0;
+    document.getElementById('nextPage').disabled = latestAnime.length < PAGE_LIMIT;
 
   } catch (err) {
     console.error(err);
+    container.innerHTML = `<p class="text-center text-red-500">Gagal memuat anime terbaru.</p>`;
   }
 }
 
-// Event listeners untuk tombol
-document.getElementById('prevPage').addEventListener('click', () => {
-  if (currentPage > 1) {
-    currentPage--;
-    loadLatestAnime(currentPage);
-  }
-});
+// ===============================
+// 📌 Event Listeners (hanya sekali)
+// ===============================
+if (!window.hasSetupListeners) {
+  window.hasSetupListeners = true;
 
-document.getElementById('nextPage').addEventListener('click', () => {
-  currentPage++;
-  loadLatestAnime(currentPage);
-});
+  document.getElementById('prevPage').addEventListener('click', () => {
+    if (currentPage > 1) setPage(currentPage - 1);
+  });
 
-// SEARCH
-document.getElementById('searchForm').addEventListener('submit', e => {
-  e.preventDefault();
-  const query = document.getElementById('searchInput').value.trim();
-  if (!query) return;
-  sessionStorage.setItem('searchQuery', query);
-  window.location.href = `/anime/search.html`;
-});
-// Load halaman pertama
-loadScheduleAnime()
+  document.getElementById('nextPage').addEventListener('click', () => {
+    setPage(currentPage + 1);
+  });
+
+  document.getElementById('searchForm').addEventListener('submit', e => {
+    e.preventDefault();
+    const query = document.getElementById('searchInput').value.trim();
+    if (!query) return;
+    sessionStorage.setItem('searchQuery', query);
+    window.location.href = `/anime/search.html`;
+  });
+
+  // Handle back/forward cache
+  window.addEventListener("pageshow", (event) => {
+    if (event.persisted) {
+      localStorage.clear();
+      window.location.reload();
+    }
+  });
+}
+
+// ===============================
+// 📌 Load pertama kali
+// ===============================
+loadScheduleAnime();
 loadLatestAnime(currentPage);
 loadTopAnime();
 </script>

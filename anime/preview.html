@@ -704,7 +704,7 @@ main {
 
 /* Thumbnail image */
 .anime-image-wrapper img {
-  width: 100%;
+  width: 70%;
   display: block;
   border-radius: 1rem;
   object-fit: cover;
@@ -1048,15 +1048,16 @@ main {
     transform:scale(1.1);
   }
 
-  .video-info-overlay {
-    position:absolute;
-    bottom:1rem; left:1rem;
-    color:#fff;
-    text-shadow:0 2px 8px rgba(0,0,0,0.6);
-    font-weight:600;
-  }
-  .video-title { font-size:1.2rem; margin:0; }
-  .video-episode { font-size:0.95rem; margin:0; }
+.video-info-overlay {
+  position: static;  /* sebelumnya absolute */
+  margin-top: 0.5rem;
+  color: #eee;   /* ganti putih agar lebih kontras di background terang */
+  font-weight: 600;
+  text-align: center;
+}
+
+.video-title { font-size: 1.2rem; margin-bottom: 0.25rem; }
+.video-episode { font-size: 1rem; margin-bottom: 0; }
 </style>
 </head>
 <body class="text-gray-900 flex flex-col min-h-screen">
@@ -1126,7 +1127,6 @@ async function loadEpisode(url) {
     const currentEpisode = sidebarEpisodes.find(ep => ep.link === url) || {};
     const animeEpisode = currentEpisode.number || localData.episode || '-';
 
-    // Fungsi render video + quality + download
     function renderVideo(videoUrl) {
       // Parse downloads
       let downloads = result.downloads;
@@ -1135,7 +1135,7 @@ async function loadEpisode(url) {
         catch (err) { console.error('Failed to parse downloads JSON:', err); downloads = {}; }
       }
 
-previewContainer.innerHTML = `
+      previewContainer.innerHTML = `
 <div class="video-card">
   <p class="video-error-info">
     <i class="fa fa-exclamation-triangle"></i>
@@ -1153,11 +1153,6 @@ previewContainer.innerHTML = `
     </iframe>
 
     <button class="btn-enlarge" onclick="enlargeVideo(this)">⤢</button>
-
-    <div class="video-info-overlay">
-      <h2 class="video-title">${animeTitle}</h2>
-      <p class="video-episode">Episode: ${animeEpisode}</p>
-    </div>
   </div>
 
   <div class="mirror-container">
@@ -1172,8 +1167,12 @@ previewContainer.innerHTML = `
   </div>
 
   <div class="anime-info-container">
-    <div class="anime-image-wrapper" style="text-align:center; margin-bottom:1rem;">
-      <img src="${animeImage}" alt="${animeTitle}" class="anime-image" style="max-width:70%; border-radius:1rem; box-shadow:0 8px 20px rgba(0,0,0,0.15);">
+    <div class="anime-image-wrapper">
+      <img src="${animeImage}" alt="${animeTitle}" class="anime-image">
+    </div>
+    <div class="video-info-overlay">
+      <h2 class="video-title">${animeTitle}</h2>
+      <p class="video-episode">Episode: ${animeEpisode}</p>
     </div>
   </div>
 
@@ -1201,9 +1200,7 @@ previewContainer.innerHTML = `
     `).join('')}
   </div>
 </div>
-`;
-
-
+      `;
 
       // Event listener: ganti kualitas
       const qualitySelect = document.getElementById('qualitySelect');
@@ -1212,15 +1209,6 @@ previewContainer.innerHTML = `
         wrapper.style.opacity = 0;
         setTimeout(() => { renderVideo(e.target.value); wrapper.style.opacity = 1; }, 150);
       });
-
-      // Event listener: klik kontainer video → toggle overlay
-      const videoWrapper = previewContainer.querySelector('.video-wrapper');
-      const overlay = previewContainer.querySelector('.video-info-overlay');
-      if (videoWrapper && overlay) {
-        videoWrapper.addEventListener('click', () => {
-          overlay.style.display = (overlay.style.display === 'none') ? 'block' : 'none';
-        });
-      }
     }
 
     // Render video pertama

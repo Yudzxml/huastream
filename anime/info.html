@@ -602,69 +602,76 @@ main {
 
 <script>
 const animeDetailContainer = document.getElementById('animeDetail');
-const id = sessionStorage.getItem('targetData');
 
-const apiDetail = `https://api.yudzxyz.x-server.my.id/api/samehadaku?action=detail&url=${id}`;
+// Key yang digunakan untuk tiap tab
+const keysMap = {
+  top: 'targetData_top',
+  latest: 'targetData_latest',
+  schedule: 'targetData_schedule',
+  default: 'targetData'
+};
 
-async function loadDetail() {
+let activeKey = null;
+
+// --- Fungsi load detail ---
+async function loadDetail(animeUrl) {
+  if (!animeUrl) {
+    animeDetailContainer.innerHTML = '<p class="text-center text-red-500">ID Anime tidak ditemukan.</p>';
+    return;
+  }
+
+  const apiDetail = `https://api.yudzxyz.x-server.my.id/api/samehadaku?action=detail&url=${encodeURIComponent(animeUrl)}`;
+
   animeDetailContainer.innerHTML = '<p class="text-center text-gray-500">Loading detail...</p>';
+
   try {
     const res = await axios.get(apiDetail);
     const data = res.data;
 
-    if (data && data.result) {
-      const anime = data.result;
+    if (!data?.result) {
+      animeDetailContainer.innerHTML = '<p class="text-center text-red-500">Info tidak ditemukan.</p>';
+      return;
+    }
 
-      // --- Simpan ke localStorage ---
-      const animeStorage = {
-        title: anime.title || 'Judul Tidak Tersedia',
-        image: anime.img || '',
-        description: anime.description || 'Deskripsi tidak tersedia.',
-        episode: anime.episodes?.[0]?.number || '-', // episode pertama
-        episodes: anime.episodes?.map(ep => ({
-          title: ep.title,
-          link: ep.link,
-          thumbnail: ep.thumbnail || anime.img,
-          date: ep.date,
-          number: ep.number
-        })) || []
-      };
-      localStorage.setItem('animeData', JSON.stringify(animeStorage));
+    const anime = data.result;
 
-      // --- Genres ---
-      let genresHTML = '';
-      if (anime.genres && anime.genres.length) {
-        genresHTML = anime.genres.map(g => `<span class="badge">${g}</span>`).join(' ');
-      }
+    // --- Simpan ke localStorage ---
+    const animeStorage = {
+      title: anime.title || 'Judul Tidak Tersedia',
+      image: anime.img || '',
+      description: anime.description || 'Deskripsi tidak tersedia.',
+      episode: anime.episodes?.[0]?.number || '-', 
+      episodes: anime.episodes?.map(ep => ({
+        title: ep.title,
+        link: ep.link,
+        thumbnail: ep.thumbnail || anime.img,
+        date: ep.date,
+        number: ep.number
+      })) || []
+    };
+    localStorage.setItem('animeData', JSON.stringify(animeStorage));
 
-      // --- Info table dari details ---
-      let infoHTML = '';
-      if (anime.details) {
-        infoHTML = `<table>
-          ${Object.entries(anime.details).map(([k, v]) => `<tr><td>${k}</td><td>${v}</td></tr>`).join('')}
-        </table>`;
-      }
+    // --- Genres ---
+    const genresHTML = (anime.genres || []).map(g => `<span class="badge">${g}</span>`).join(' ');
 
-      // --- Episodes list (urut dari terbaru) ---
-      let episodesHTML = '';
-      if (anime.episodes && anime.episodes.length) {
-        anime.episodes.sort((a, b) => parseInt(b.number) - parseInt(a.number));
-        episodesHTML = anime.episodes.map(ep => `
-          <li>
-            <a href="#" data-ep-link="${ep.link}">${ep.number} - ${ep.title} (${ep.date})</a>
-          </li>
-        `).join('');
-      }
+    // --- Info table ---
+    const infoHTML = anime.details
+      ? `<table>${Object.entries(anime.details).map(([k,v])=>{
+          let val = Array.isArray(v) ? v.join(', ') : v;
+          return `<tr><td>${k}</td><td>${val}</td></tr>`;
+        }).join('')}</table>`
+      : '';
 
-      // Ambil link EPS 1 (nomor 1)
-      let firstEpisodeLink = '#';
-      if (anime.episodes && anime.episodes.length) {
-        const sortedByNum = [...anime.episodes].sort((a, b) => parseInt(a.number) - parseInt(b.number));
-        firstEpisodeLink = sortedByNum[0]?.link || '#';
-      }
+    // --- Episodes list (urut terbaru) ---
+    const episodesHTML = (anime.episodes || [])
+      .sort((a,b)=>parseInt(b.number)-parseInt(a.number))
+      .map(ep=>`<li><a href="#" data-ep-link="${ep.link}">${ep.number} - ${ep.title} (${ep.date})</a></li>`).join('');
 
-      // --- Render HTML detail ---
-      animeDetailContainer.innerHTML = `
+    const firstEpisodeLink = (anime.episodes || [])
+      .sort((a,b)=>parseInt(a.number)-parseInt(b.number))[0]?.link || '#';
+
+    // --- Render HTML ---
+    animeDetailContainer.innerHTML = `
 <div class="anime-detail-wrapper">
   <div class="anime-thumb-container">
     <img src="${anime.img}" alt="${anime.title}" class="main-thumb">
@@ -672,75 +679,111 @@ async function loadDetail() {
 
   <div class="anime-info-container">
     <h2 class="anime-title">${anime.title || 'Judul Tidak Tersedia'}</h2>
-<span class="anime-rating">
-  <i class="fa fa-star" style="color: gold;"></i>
-  ${anime.ratingValue || 'N/A'} (${anime.ratingCount || '0'} votes)
-</span>
-    
+    <span class="anime-rating"><i class="fa fa-star" style="color: gold;"></i> ${anime.ratingValue || 'N/A'} (${anime.ratingCount || '0'} votes)</span>
     <div class="anime-genres">${genresHTML}</div>
-    
     <p class="anime-synopsis">${anime.description || 'Deskripsi tidak tersedia.'}</p>
-    
-    <div class="anime-info">
-      <h3>Info:</h3>
-      ${infoHTML}
-    </div>
-
-    <button class="btn-watch-ep1">
-      <i class="fas fa-play"></i> Nonton EPS 1
-    </button>
-
-    <div class="anime-episodes">
-      <h3>Episodes:</h3>
-      <ul>${episodesHTML}</ul>
-    </div>
+    <div class="anime-info"><h3>Info:</h3>${infoHTML}</div>
+    <button class="btn-watch-ep1"><i class="fas fa-play"></i> Nonton EPS 1</button>
+    <div class="anime-episodes"><h3>Episodes:</h3><ul>${episodesHTML}</ul></div>
   </div>
 </div>
 `;
 
-      // --- Event klik tombol Nonton EPS 1 ---
-      const btnWatch = document.querySelector('.btn-watch-ep1');
-      if (btnWatch && firstEpisodeLink !== '#') {
-        btnWatch.addEventListener('click', () => {
-          sessionStorage.setItem('targetData', firstEpisodeLink);
+    // --- Event klik tombol EPS 1 ---
+    document.querySelector('.btn-watch-ep1')?.addEventListener('click', () => {
+      sessionStorage.setItem('targetData', firstEpisodeLink);
+      window.location.href = '/anime/preview.html';
+    });
+
+    // --- Event klik semua episode ---
+    document.querySelectorAll('.anime-episodes a[data-ep-link]').forEach(link => {
+      link.addEventListener('click', e => {
+        e.preventDefault();
+        const epUrl = link.getAttribute('data-ep-link');
+        if (epUrl) {
+          sessionStorage.setItem('targetData', epUrl);
           window.location.href = '/anime/preview.html';
-        });
-      }
-
-      // --- Event klik semua episode ---
-      const episodeLinks = document.querySelectorAll('.anime-episodes a[data-ep-link]');
-      episodeLinks.forEach(link => {
-        link.addEventListener('click', e => {
-          e.preventDefault();
-          const epUrl = link.getAttribute('data-ep-link');
-          if (epUrl) {
-            sessionStorage.setItem('targetData', epUrl);
-            window.location.href = '/anime/preview.html';
-          }
-        });
+        }
       });
+    });
 
-    } else {
-      animeDetailContainer.innerHTML = '<p class="text-center text-red-500">Info tidak ditemukan.</p>';
-    }
   } catch (err) {
     console.error(err);
     animeDetailContainer.innerHTML = '<p class="text-center text-red-500">Terjadi kesalahan saat memuat detail.</p>';
   }
 }
 
-if(id){
-  loadDetail();
-} else {
-  animeDetailContainer.innerHTML = '<p class="text-center text-red-500">ID Anime tidak ditemukan di URL.</p>';
+// --- Fungsi buka tab ---
+function openTab(type, animeUrl) {
+  // Hapus semua key lama
+  Object.values(keysMap).forEach(k => {
+    localStorage.removeItem(k);
+    sessionStorage.removeItem(k);
+  });
+
+  // Simpan key aktif baru
+  const key = keysMap[type] || keysMap.default;
+  if (animeUrl) sessionStorage.setItem(key, JSON.stringify(animeUrl));
+  activeKey = key;
+
+  // Load detail
+  loadDetail(animeUrl);
 }
 
-document.getElementById('searchForm').addEventListener('submit', e => {
+// --- Ambil key yang tersimpan saat reload halaman ---
+let foundUrl = null;
+for (let key of Object.values(keysMap)) {
+  const data = sessionStorage.getItem(key) || localStorage.getItem(key);
+  if (data) {
+    try {
+      const parsed = JSON.parse(data);
+      foundUrl = parsed?.url || parsed.link || parsed;
+      activeKey = key;
+      break;
+    } catch {
+      foundUrl = data;
+      activeKey = key;
+      break;
+    }
+  }
+}
+
+// Load pertama kali
+loadDetail(foundUrl);
+
+// --- Event tab ---
+const topAnimeList      = JSON.parse(localStorage.getItem('list_top') || '[]');
+const latestAnimeList   = JSON.parse(localStorage.getItem('list_latest') || '[]');
+const scheduleAnimeList = JSON.parse(localStorage.getItem('list_schedule') || '[]');
+
+function getFirstAnimeUrl(list) {
+  if (!Array.isArray(list) || list.length === 0) return null;
+  return list[0]?.url || null; 
+}
+
+// Event listener tab
+document.getElementById('tabTop')?.addEventListener('click', () => {
+  const url = getFirstAnimeUrl(topAnimeList);
+  if (url) openTab('top', url);
+});
+
+document.getElementById('tabLatest')?.addEventListener('click', () => {
+  const url = getFirstAnimeUrl(latestAnimeList);
+  if (url) openTab('latest', url);
+});
+
+document.getElementById('tabSchedule')?.addEventListener('click', () => {
+  const url = getFirstAnimeUrl(scheduleAnimeList);
+  if (url) openTab('schedule', url);
+});
+
+// --- Search form ---
+document.getElementById('searchForm')?.addEventListener('submit', e => {
   e.preventDefault();
   const query = document.getElementById('searchInput').value.trim();
   if (!query) return;
   sessionStorage.setItem('searchQuery', query);
-  window.location.href = `/anime/search.html`;
+  window.location.href = '/anime/search.html';
 });
 </script>
 
