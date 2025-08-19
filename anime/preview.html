@@ -1097,7 +1097,7 @@ main {
 const previewContainer = document.getElementById('previewPlayer');
 const mirrorButtonsContainer = document.getElementById('mirrorButtons');
 const sidebarContainer = document.getElementById('sidebarEpisodes');
-const epUrl = sessionStorage.getItem('targetData') || "https://v1.samehadaku.how/summer-pockets-episode-15/"
+const epUrl = sessionStorage.getItem('targetData');
 
 async function loadEpisode(url) {
   if (!url) {
