@@ -1274,5 +1274,13 @@ document.getElementById('searchForm').addEventListener('submit', e => {
   window.location.href = `/donghua/search.html`;
 });
 </script>
+<script>
+document.querySelectorAll('.contact-icons a').forEach(link=>{
+  link.addEventListener('click',function(e){
+    e.preventDefault();
+    window.open(this.href,'_system');
+  });
+});
+</script>
 </body>
 </html>
