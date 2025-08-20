@@ -1,0 +1,667 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="content-type" content="text/html; charset=utf-8"/>
+    <meta name="referrer" content="no-referrer-when-downgrade">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="all">
+    <title>HUASTREAM | Nonton Donghua & Anime Bahasa Indonesia</title>
+    <meta name="description" content="HUASTREAM.YYDZ adalah tempat nonton donghua dan anime online terlengkap dengan subtitle Indonesia. Mulai dari Action, Fantasy, Romance, Isekai, Comedy, hingga Cultivation dan Martial Arts, semua bisa kamu tonton gratis dengan kualitas terbaik. Koleksi lengkap donghua terbaru dan anime populer tersedia di HUASTREAM.YYDZ untuk pengalaman menonton seru tanpa batas.">
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="HUASTREAM.YYDZ" />
+    <meta property="og:title" content="HUASTREAM | Nonton Donghua & Anime Bahasa Indonesia" />
+    <meta property="og:image" content="https://raw.githubusercontent.com/Yudzxml/UploaderV2/main/tmp/55337a9f.png" />
+   <meta property="og:description" content="HUASTREAM.YYDZ adalah platform nonton donghua dan anime terbaru dengan subtitle Indonesia. Koleksi lengkap dari Action, Fantasy, Isekai, Romance, hingga Cultivation bisa kamu tonton gratis!" />
+   <meta property="og:url" content="https://huastream.yydz.my.id" />
+   <meta name="keywords" content="nonton donghua, nonton anime, donghua sub indo, anime sub indo, streaming anime, streaming donghua, anime terbaru, donghua terbaru, huastream" itemprop="keywords" />
+   <meta content="Nonton anime dan donghua sub indo terbaru hari ini dengan kualitas terbaik hanya di HUASTREAM.YYDZ." itemprop="headline" />
+    <meta name="thumbnailUrl" content="https://raw.githubusercontent.com/Yudzxml/UploaderV2/main/tmp/55337a9f.png" itemprop="thumbnailUrl" />
+    <meta content="https://huastream.yydz.my.id" itemprop="url" />
+    <link rel="canonical" href="https://huastream.yydz.my.id" />
+    <link rel="icon" href="https://raw.githubusercontent.com/Yudzxml/UploaderV2/main/tmp/26250dc9.png">
+    <meta name="mobile-web-app-capable" content="yes">
+    <link rel="manifest" href="/manifest.json" />
+    <meta name="theme-color" content="#2563eb" />
+     <script>
+  if ("serviceWorker" in navigator) {
+    navigator.serviceWorker.register("/service-worker.js")
+     }
+  </script>
+  
+  <!-- Tailwind CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.2/dist/tailwind.min.css" rel="stylesheet">
+  
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+  
+  <!-- Font Awesome 6 -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <!-- Firebase App (core) -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  
+  <!-- Firebase Auth -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  
+  <!-- Firebase Firestore -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+  
+<style>
+*,
+*::before,
+*::after { box-sizing: border-box; }
+
+:root{
+  --bg:#f6f8fb;
+  --surface: rgba(255,255,255,0.85);
+  --text:#0f1724;
+  --muted:#6b7280;
+  --accent1:#2563eb;
+  --accent2:#7c3aed;
+  --glass: rgba(255,255,255,0.6);
+}
+
+html,body{ height:100%; }
+
+body{
+  margin:0;
+  font-family:'Poppins', 'Inter', system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+  background: linear-gradient(180deg,#fbfdff 0%, #eef6ff 40%, var(--bg) 100%);
+  color:var(--text);
+  -webkit-font-smoothing:antialiased;
+  -moz-osx-font-smoothing:grayscale;
+  line-height:1.4;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.container{
+  max-width:1200px;
+  margin:0 auto;
+  padding:0 1rem;
+}
+
+/* header */
+header{
+  position:sticky;
+  top:0;
+  z-index:60;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:1rem;
+  padding:.65rem 0;
+  backdrop-filter: blur(8px) saturate(120%);
+  background: linear-gradient(180deg, rgba(255,255,255,0.7), rgba(255,255,255,0.55));
+  border-bottom: 1px solid rgba(15,23,42,0.04);
+  transition: box-shadow .22s ease, transform .18s ease;
+}
+
+header.elev{ box-shadow: 0 8px 30px rgba(15,23,42,0.06); transform: translateY(-1px); }
+
+/* logo */
+header h1{
+  display:flex;
+  align-items:center;
+  gap:.6rem;
+  margin:0;
+  font-weight:800;
+  font-size:1.25rem;
+  letter-spacing:-0.2px;
+
+  /* Gradient */
+  background: linear-gradient(90deg, var(--accent1), var(--accent2));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent; 
+  background-clip: text; 
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+
+/* search form (pill) */
+#searchForm{
+  display:flex;
+  align-items:center;
+  gap:.3rem;
+  padding:3px 6px;
+  border-radius:9999px;
+  background: var(--surface);
+  box-shadow: 0 6px 18px rgba(2,6,23,0.04);
+  border: 1px solid rgba(15,23,42,0.05);
+  transition: box-shadow .18s ease, transform .18s ease;
+  max-width: 260px; 
+}
+
+/* focus state */
+#searchForm:focus-within{
+  box-shadow: 0 10px 28px rgba(37,99,235,0.08);
+  transform: translateY(-1.5px);
+  border-color: rgba(99,102,241,0.12);
+}
+
+/* input */
+#searchInput{
+  background: transparent;
+  border: none;
+  padding:.4rem .6rem;
+  width: 100%;
+  max-width: 180px;   /* <-- lebih ramping */
+  font: 500 .9rem/1.2 'Inter', system-ui, sans-serif;
+  color: #eee
+  caret-color: var(--accent1);
+  outline: none;
+}
+
+/* button */
+#searchBtn{
+  display:inline-flex;
+  align-items:center;
+  gap:.3rem;
+  border:none;
+  padding:.4rem .7rem;
+  border-radius:9999px;
+  font-weight:600;
+  font-size:.85rem;
+  color:#fff;
+  background: linear-gradient(90deg,var(--accent1),var(--accent2));
+  cursor:pointer;
+  box-shadow: 0 8px 20px rgba(37,99,235,0.1);
+  transition: transform .14s cubic-bezier(.2,.8,.2,1), box-shadow .14s ease;
+}
+
+/* hover/active */
+#searchBtn:hover{ transform: translateY(-2px); box-shadow: 0 14px 28px rgba(37,99,235,0.14); }
+#searchBtn:active{ transform: translateY(0); box-shadow: 0 6px 16px rgba(37,99,235,0.1); }
+
+/* responsive */
+@media (max-width:880px){
+  .container{ padding:0 .9rem; }
+  #searchForm{ max-width: 100%; }
+  #searchInput{ max-width: 100%; }
+}
+
+@media (max-width:640px){
+  header{ flex-direction:column; align-items:stretch; gap:.6rem; padding:.6rem 0; }
+  header h1{ justify-content:center; width:100%; }
+  #searchForm{ width:100%; max-width: 100%; } 
+  #searchInput{ flex:1; width:100%; }
+  #searchBtn{ padding:.5rem .7rem; font-size:.85rem; }
+}
+
+/* dark mode */
+@media (prefers-color-scheme: dark){
+  :root{ --text:#e6eef8; --muted:#9ca3af; --bg:#071025; --surface: rgba(10,14,20,0.55); }
+  body{ background: linear-gradient(180deg,#041226 0%, #071025 60%); color:var(--text); }
+  header{ background: linear-gradient(180deg, rgba(8,10,15,0.6), rgba(6,8,12,0.55)); border-bottom: 1px solid rgba(255,255,255,0.03); }
+  #searchForm{ background: var(--surface); border: 1px solid rgba(255,255,255,0.03); box-shadow: 0 10px 30px rgba(2,6,23,0.45); }
+  #searchInput{ color:var(--text); }
+}
+
+.gradient-icon {
+  transition: transform 0.2s;
+  background: linear-gradient(90deg, var(--accent1), var(--accent2));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+html, body {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+main {
+  flex: 1; 
+  padding: 1rem;
+}
+.footer {
+  background-color: var(--bg);
+  color: var(--text);
+  text-align: center;
+  padding: 1rem 0 0; 
+  border-radius: 1rem 1rem 0 0;
+  font-family: 'Poppins', sans-serif;
+  position: relative;
+  flex-shrink: 0;
+}
+.footer .container {
+  max-width: 600px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  align-items: center;
+  padding: 0.75rem 1rem;
+  border-radius: 1rem;
+  transition: box-shadow 0.2s ease, transform 0.15s ease;
+}
+.footer .container:active {
+  box-shadow: 0 8px 20px rgba(37,99,235,0.3);
+  transform: translateY(-1px);
+}
+.footer .copyright {
+  font-size: 0.8rem;
+}
+.footer p {
+  margin: 0.5rem 0;
+}
+.footer .contact-icons {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  font-size: 1.3rem;
+}
+.footer .contact-icons a {
+  transition: transform 0.2s;
+  background: linear-gradient(90deg, var(--accent1), var(--accent2));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.footer .contact-icons a:active {
+  transform: scale(1.2);
+}
+.footer .team {
+  font-size: 0.75rem;
+}
+.footer::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 50px;
+  background-color: var(--bg);
+  z-index: -1;
+}
+.gradient-text {
+  transition: transform 0.2s;
+  background: linear-gradient(90deg, var(--accent1), var(--accent2));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+@media (prefers-color-scheme: dark) {
+  .footer {
+    background-color: var(--surface, #0a0e14);
+    color: var(--text, #e6eef8);
+  }
+}
+</style>
+<style>
+  /* =======================
+   TOAST CENTER
+======================= */
+#toast {
+  position: fixed;
+  top: 20rem;
+  left: 50%;
+  transform: translateX(-50%) translateY(-20px) scale(0.95); 
+  min-width: 220px;
+  max-width: 300px;
+  padding: 0.75rem 1rem;
+  border-radius: 0.75rem;
+  font-family: 'Inter','Poppins',sans-serif;
+  font-weight: 600;
+  font-size: 0.95rem;
+  color: #fff;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.12);
+  backdrop-filter: blur(6px) saturate(120%);
+  background: var(--surface);
+  opacity: 0;
+  pointer-events: none;
+  transition: all 0.3s cubic-bezier(.2,.8,.2,1);
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+#toast.show {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0) scale(1);
+  pointer-events: auto;
+}
+#toast.success { background: linear-gradient(90deg, #10b981, #3b82f6); }
+#toast.error { background: linear-gradient(90deg, #ef4444, #f87171); }
+#toast i { margin-right: 0.5rem; font-size: 1.1rem; }
+
+@media (max-width:640px){
+  #toast {
+    left: 50%;
+    right: auto;
+    min-width: auto;
+  }
+}
+</style>
+<style>
+  /* ====== HISTORY WRAPPER ====== */
+.history-wrapper {
+  margin-top: 1.5rem;
+  display: grid;
+  gap: 2.5rem; /* jarak antar grup anime */
+}
+
+/* ====== GROUP PER ANIME ====== */
+.history-group {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem; /* jarak antar row di dalam grup */
+}
+
+.history-title {
+  font-size: 1rem; /* lebih kecil */
+  font-weight: 700;
+  background: linear-gradient(90deg,var(--accent1),var(--accent2));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  margin: 0;
+  padding-left: .25rem;
+}
+
+/* ====== HISTORY ROW SLIDER ====== */
+.history-row {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(150px, 200px); /* card lebih kecil */
+  overflow-x: auto;
+  gap: 1rem;
+  padding-bottom: .5rem;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+}
+
+.history-row::-webkit-scrollbar {
+  height: 6px;
+}
+.history-row::-webkit-scrollbar-track {
+  background: transparent;
+}
+.history-row::-webkit-scrollbar-thumb {
+  background: linear-gradient(90deg,var(--accent1),var(--accent2));
+  border-radius: 3px;
+}
+
+/* ====== CARD ====== */
+.history-card {
+  background: var(--surface);
+  border-radius: 0.9rem; /* lebih rounded */
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  min-width: 150px;
+  max-width: 200px;
+  box-shadow: 0 4px 12px rgba(2,6,23,0.06);
+  transition: transform .25s ease, box-shadow .25s ease;
+  cursor: pointer;
+  scroll-snap-align: start;
+  position: relative;
+}
+
+.history-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 10px 22px rgba(37,99,235,0.18);
+}
+
+/* ====== Thumbnail ====== */
+.history-thumb {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 3/4;
+  overflow: hidden;
+}
+
+.history-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: transform .3s ease;
+}
+
+.history-card:hover .history-thumb img {
+  transform: scale(1.05);
+}
+
+/* Hover overlay */
+.history-thumb::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top, rgba(0,0,0,.5), rgba(0,0,0,.05) 60%);
+  opacity: 0;
+  transition: opacity .25s ease;
+}
+.history-card:hover .history-thumb::after {
+  opacity: 1;
+}
+
+/* ====== Info section ====== */
+.history-info {
+  padding: .5rem .75rem;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+}
+
+.history-info h2 {
+  font-size: .85rem;
+  font-weight: 600;
+  margin: 0 0 .3rem;
+  line-height: 1.2;
+  background: linear-gradient(90deg,var(--accent1),var(--accent2));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.history-info p {
+  font-size: .75rem;
+  color: var(--muted);
+  margin: 0 0 .2rem;
+}
+
+/* ====== Delete button ====== */
+.history-card .deleteBtn {
+  position: absolute;
+  top: .4rem;
+  right: .5rem;
+  font-size: .65rem;
+  background: rgba(0,0,0,0.55);
+  border: none;
+  color: #fff;
+  padding: 2px 6px;
+  border-radius: 9999px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: background .2s, transform .2s;
+}
+.history-card .deleteBtn:hover {
+  background: rgba(239,68,68,0.85);
+  transform: scale(1.05);
+} 
+</style>
+</head>
+<body class="text-gray-900">
+  <!-- HEADER -->
+  <header class="bg-white shadow p-4 flex justify-between items-center sticky top-0 z-50">
+    <div class="flex items-center gap-2">
+      <h1 class="text-2xl font-bold text-blue-600">RIWAYAT SAYA</h1>
+    </div>
+    <form id="searchForm" class="flex items-center">
+      <input type="text" id="searchInput" placeholder="Cari Riwayat..." class="focus:outline-none px-2 py-1 border rounded">
+      <button type="submit" id="searchBtn" class="bg-blue-600 text-white px-3 py-2 hover:bg-blue-700 flex items-center gap-1">
+        <i class="fas fa-search"></i> Cari
+      </button>
+    </form>
+  </header>
+
+  <!-- TOAST -->
+  <div id="toast"></div>
+
+  <!-- MAIN -->
+  <main class="p-4 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4" id="historyContainer">
+  </main>
+
+  <!-- FOOTER -->
+  <footer class="footer mt-8">
+    <div class="container text-center">
+      <p class="copyright">
+        © 2025 <strong>HUASTREAM.YYDZ</strong>. All rights reserved.
+      </p>
+      <p class="contact-icons flex justify-center gap-3 mt-2">
+        <a href="https://wa.me/6283872031397" target="_blank" class="icon-gradient"><i class="fab fa-whatsapp"></i></a>
+        <a href="https://t.me/Yudzxzy" target="_blank" class="icon-gradient"><i class="fab fa-telegram-plane"></i></a>
+        <a href="mailto:yudaaryaardhana1122@email.com" class="icon-gradient"><i class="fas fa-envelope"></i></a>
+      </p>
+      <p class="team mt-2">
+        Design & development <span class="font-semibold gradient-text">Tim Yudzxml</span>
+      </p>
+    </div>
+  </footer>
+  <script src="/firebase.js"></script>
+<script>
+  // ============================
+  // --- TOAST ---
+  // ============================
+  function showToast(message, type = 'success') {
+    const toast = document.getElementById('toast');
+    if (!toast) return;
+    const icon = type === 'success' ? 'fas fa-check-circle' : 'fas fa-exclamation-circle';
+    toast.innerHTML = `<i class="${icon}"></i> ${message}`;
+    toast.className = `show ${type}`;
+    setTimeout(() => { toast.className = ''; }, 3000);
+  }
+  // ============================
+  // --- RENDER RIWAYAT ---
+  // ============================
+  let allHistory = [];
+  let userId = null;
+
+  function renderHistory(data) {
+ // console.log(JSON.stringify(data, null, 2));
+
+  const container = document.getElementById('historyContainer');
+  container.innerHTML = "";
+
+  if (!data || data.length === 0) {
+    container.innerHTML = `<p class="text-center text-gray-500">Tidak ada riwayat ditemukan.</p>`;
+    return;
+  }
+
+  data.forEach(item => {
+    // Wrapper per judul anime
+    const group = document.createElement('div');
+    group.className = "history-group";
+
+    // Judul anime
+    const titleEl = document.createElement('h3');
+    titleEl.className = "history-title";
+    titleEl.innerHTML = `<i class="fas fa-tv"></i> ${item.title}`;
+    group.appendChild(titleEl);
+
+    // Row container
+    const row = document.createElement('div');
+    row.className = "history-row";
+
+    // Loop setiap episode
+    item.episodes.forEach(ep => {
+      const card = document.createElement('div');
+      card.className = "history-card";
+      card.innerHTML = `
+        <div class="history-thumb">
+          <img src="${ep.imageUrl || 'https://via.placeholder.com/300x420?text=No+Image'}" alt="${item.title}">
+        </div>
+        <div class="history-info">
+          <p><i class="fas fa-film"></i> Episode: <b>${ep.episode}</b></p>
+          <p class="text-sm"><i class="fas fa-calendar-day"></i> ${new Date(ep.dateSaved).toLocaleDateString()}</p>
+          <button class="deleteBtn" title="Hapus"><i class="fas fa-trash-alt"></i></button>
+        </div>
+      `;
+
+      // Delete per episode
+      card.querySelector('.deleteBtn').addEventListener('click', e => {
+        e.stopPropagation();
+        deleteHistoryItem(item.title, ep.episode);
+      });
+
+      // Klik = buka episode terakhir
+      card.addEventListener('click', () => {
+        sessionStorage.setItem('targetData', ep.episodeUrl);
+        window.location.href = ep.path || '/donghua/preview.html';
+      });
+
+      row.appendChild(card);
+    });
+
+    group.appendChild(row);
+    container.appendChild(group);
+  });
+}
+  // ============================
+  // --- DELETE ITEM ---
+  // ============================
+  function deleteHistoryItem(animeTitle) {
+    if (!userId) return;
+    const userDoc = firebase.firestore().collection('users').doc(userId);
+
+    userDoc.update({ [animeTitle]: firebase.firestore.FieldValue.delete() })
+      .then(() => showToast("Riwayat berhasil dihapus"))
+      .catch(err => showToast("Gagal menghapus riwayat", "error"));
+  }
+
+  // ============================
+  // --- FIRESTORE FETCH ---
+  // ============================
+  function fetchHistoryRealtime(uid) {
+    const userDoc = firebase.firestore().collection('users').doc(uid);
+
+    userDoc.onSnapshot(doc => {
+      const data = doc.data() || {};
+      const historyArr = [];
+
+      for (let animeTitle in data) {
+        if (Array.isArray(data[animeTitle]) && data[animeTitle].length > 0) {
+          // Sort episode ascending (dateSaved)
+          const episodes = data[animeTitle].sort((a, b) => new Date(a.dateSaved) - new Date(b.dateSaved));
+          historyArr.push({ title: animeTitle, episodes });
+        }
+      }
+
+      // Sort anime berdasarkan episode terakhir terbaru
+      historyArr.sort((a, b) => {
+        const aLast = new Date(a.episodes[a.episodes.length - 1].dateSaved);
+        const bLast = new Date(b.episodes[b.episodes.length - 1].dateSaved);
+        return bLast - aLast;
+      });
+
+      allHistory = historyArr;
+      renderHistory(allHistory);
+    }, error => {
+      showToast("Gagal memuat riwayat", "error");
+      console.error(error);
+    });
+  }
+  // ============================
+  // --- SEARCH FUNCTION ---
+  // ============================
+  document.getElementById('searchForm')?.addEventListener('submit', e => {
+    e.preventDefault();
+    const query = document.getElementById('searchInput').value.toLowerCase();
+    const filtered = allHistory.filter(item => item.title.toLowerCase().includes(query));
+    renderHistory(filtered);
+  });
+
+  // ============================
+  // --- INIT ---
+  // ============================
+  auth.onAuthStateChanged(user => {
+    if (user) {
+      userId = user.uid;
+      fetchHistoryRealtime(userId);
+    } else {
+      window.location.href = 'profil.html';
+    }
+  });
+</script>
+</body>
+</html>
