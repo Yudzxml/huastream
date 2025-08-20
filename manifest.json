@@ -1,0 +1,21 @@
+{
+  "name": "HUASTREAM.YYDZ",
+  "short_name": "HUASTREAM",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#2563eb",
+  "description": "HUASTREAM.YYDZ adalah tempat nonton donghua dan anime online terlengkap dengan subtitle Indonesia. Mulai dari Action, Fantasy, Romance, Isekai, Comedy, hingga Cultivation dan Martial Arts, semua bisa kamu tonton gratis dengan kualitas terbaik. Koleksi lengkap donghua terbaru dan anime populer tersedia di HUASTREAM.YYDZ untuk pengalaman menonton seru tanpa batas.",
+  "icons": [
+    {
+      "src": "https://raw.githubusercontent.com/Yudzxml/UploaderV2/main/tmp/34c8a9a7.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "https://raw.githubusercontent.com/Yudzxml/UploaderV2/main/tmp/34c8a9a7.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

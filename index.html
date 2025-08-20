@@ -21,6 +21,8 @@
     <link rel="canonical" href="https://huastream.yydz.my.id" />
     <link rel="icon" href="https://raw.githubusercontent.com/Yudzxml/UploaderV2/main/tmp/26250dc9.png">
     <meta name="mobile-web-app-capable" content="yes">
+    <link rel="manifest" href="/manifest.json" />
+    <meta name="theme-color" content="#2563eb" />
   <title>HUASTREAM.YYDZ</title>
   <style>
     /* Reset */
@@ -87,11 +89,15 @@
     }
   </style>
   <script>
-    // Redirect otomatis ke home.html setelah 3 detik
     setTimeout(() => {
       window.location.href = "donghua/home.html";
     }, 3000);
   </script>
+  <script>
+  if ("serviceWorker" in navigator) {
+    navigator.serviceWorker.register("/service-worker.js")
+  }
+</script>
 </head>
 <body>
   <div class="logo-text">HUASTREAM.YYDZ</div>
