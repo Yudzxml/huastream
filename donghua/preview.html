@@ -32,7 +32,14 @@
   <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.2/dist/tailwind.min.css" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&family=Inter:wght@400;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-
+  
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  
+  <!-- Firebase Auth -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  
+  <!-- Firebase Firestore -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 <style>
   *,
 *::before,
@@ -987,6 +994,108 @@ main {
   <ul id="sidebarEpisodes"></ul>
 </div>
 </main>
+<!-- Bottom Navigation -->
+<nav class="bottom-nav">
+  <a href="/donghua/home.html" class="nav-link active">
+    <i class="fas fa-home"></i>
+    <span>Home</span>
+  </a>
+  <a href="/donghua/search.html" class="nav-link">
+    <i class="fas fa-search"></i>
+    <span>Cari</span>
+  </a>
+  <a href="../bookmark.html" class="nav-link">
+    <i class="fas fa-bookmark"></i>
+    <span>Bookmark</span>
+  </a>
+  <a href="/donghua/profil.html" class="nav-link">
+    <i class="fas fa-user"></i>
+    <span>Akun</span>
+  </a>
+</nav>
+
+<style>
+/* ===========================
+   Bottom Navigation Style
+=========================== */
+main {
+  padding-bottom: 70px;
+}
+.bottom-nav {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: space-around;
+  background: var(--surface);
+  backdrop-filter: blur(12px) saturate(120%);
+  border-top: 1px solid rgba(15,23,42,0.05);
+  padding: 0.5rem 0;
+  z-index: 60;
+  box-shadow: 0 -2px 8px rgba(0,0,0,0.05);
+}
+
+.bottom-nav .nav-link {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.2rem;
+  color: var(--muted);
+  font-size: 0.7rem;
+  text-decoration: none;
+  transition: all 0.2s ease;
+  position: relative;
+}
+
+.bottom-nav .nav-link i {
+  font-size: 1.2rem;
+  transition: all 0.2s ease;
+  background: linear-gradient(90deg, var(--accent1), var(--accent2));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.bottom-nav .nav-link.active i,
+.bottom-nav .nav-link:hover i {
+  transform: translateY(-2px) scale(1.1);
+  filter: drop-shadow(0 2px 4px rgba(37,99,235,0.4));
+}
+
+.bottom-nav .nav-link.active span,
+.bottom-nav .nav-link:hover span {
+  color: var(--accent1);
+  font-weight: 600;
+}
+
+@media (prefers-color-scheme: dark) {
+  .bottom-nav {
+    background: var(--surface);
+    border-top: 1px solid rgba(255,255,255,0.05);
+    box-shadow: 0 -2px 8px rgba(0,0,0,0.2);
+  }
+
+  .bottom-nav .nav-link {
+    color: var(--muted);
+  }
+
+  .bottom-nav .nav-link.active span,
+  .bottom-nav .nav-link:hover span {
+    color: var(--accent1);
+  }
+}
+
+/* Responsive: teks lebih kecil di mobile */
+@media (max-width: 480px) {
+  .bottom-nav .nav-link span {
+    font-size: 0.65rem;
+  }
+  .bottom-nav .nav-link i {
+    font-size: 1.1rem;
+  }
+}
+</style>
+
 
 <footer class="footer">
   <div class="container">
@@ -1001,12 +1110,25 @@ main {
     <p class="team">Design & development <span class="font-semibold gradient-text">Tim Yudzxml</span></p>
   </div>
 </footer>
-
+<script src="../firebase.js"></script>
 <script>
 const previewContainer = document.getElementById('previewPlayer');
 const mirrorButtonsContainer = document.getElementById('mirrorButtons');
 const sidebarContainer = document.getElementById('sidebarEpisodes');
 const epUrl = sessionStorage.getItem('targetData');
+
+let currentUserId = null;
+
+// Tunggu auth state Firebase
+firebase.auth().onAuthStateChanged(user => {
+  if(user) {
+    currentUserId = user.uid;
+    console.log("[Auth] User login:", currentUserId);
+  } else {
+    currentUserId = null;
+    console.log("[Auth] User belum login");
+  }
+});
 
 async function loadEpisode(url){
   if(!url){
@@ -1026,23 +1148,19 @@ async function loadEpisode(url){
     const result = data.result;
     const anime = result.anime;
 
-    // Fungsi untuk render video + mirror
     function renderVideo(videoUrl){
-  previewContainer.innerHTML = `
+      previewContainer.innerHTML = `
 <div class="video-card">
-  <!-- Informasi jika video error -->
-<p class="video-error-info">
-  <i class="fa fa-exclamation-triangle" aria-hidden="true"></i>
-  Informasi:<br>
-  Jika Stream gagal diputar, silahkan ganti link mirror/server di bawah
-</p>
-    <!-- Video -->
+  <p class="video-error-info">
+    <i class="fa fa-exclamation-triangle" aria-hidden="true"></i>
+    Informasi:<br>
+    Jika Stream gagal diputar, silahkan ganti link mirror/server di bawah
+  </p>
   <div class="video-wrapper">
     <iframe src="${videoUrl}" frameborder="0" allowfullscreen class="video-iframe"></iframe>
   </div>
 </div>
 
-      <!-- Mirror select -->
 <div class="mirror-container">
   <p class="mirror-text">Pilih Mirror / Server:</p>
   <select id="mirrorSelect" class="mirror-select">
@@ -1052,53 +1170,58 @@ async function loadEpisode(url){
   </select>
 </div>
 
-      <!-- Info Anime -->
-      <!-- Info Anime dengan gambar -->
 <div class="anime-info-container">
-  <!-- Gambar anime -->
   <div class="anime-image-wrapper" style="text-align:center; margin-bottom:1rem;">
     <img src="${anime.image}" alt="${anime.animeTitle}" class="anime-image" style="max-width:70%; border-radius:1rem; box-shadow:0 8px 20px rgba(0,0,0,0.15);">
   </div>
 
-  <!-- Judul dan info -->
   <h2 class="anime-title">${result.title}</h2>
   <p class="text-center text-gray-500">${anime.animeTitle} - Episode ${result.episode}</p>
   <p class="mt-2 text-sm text-gray-600">${anime.description}</p>
   <p class="mt-2 text-sm text-gray-600">Rating: ${anime.rating} | Status: ${anime.status} | Durasi: ${anime.durasi}</p>
   <p class="mt-2 text-sm text-gray-600">Genres: ${anime.genres.join(', ')}</p>
 </div>
-    </div>
-  `;
+`;
 
-  // Event listener select
-  const mirrorSelect = document.getElementById('mirrorSelect');
-  mirrorSelect.addEventListener('change', (e) => {
-    renderVideo(e.target.value);
-  });
-}
+      const mirrorSelect = document.getElementById('mirrorSelect');
+      mirrorSelect.addEventListener('change', (e) => renderVideo(e.target.value));
+    }
 
-    // Render video pertama kali pakai mainVideo
-    renderVideo(result.mainVideo, result.mirrors[0].name);
+    renderVideo(result.mainVideo);
 
-sidebarContainer.innerHTML = `
-  <div class="anime-episodes">
-    <h3 class="episode-header">Episode:</h3>
-    <ul>
-      ${result.sidebarEpisodes.map(ep => `
-        <li class="episode-bubble">
-          <div class="episode-thumb-wrapper">
-            <img src="${ep.thumbnail}" alt="${ep.title}" class="episode-thumb">
-          </div>
-<div class="episode-info">
-  <a href="#" class="episode-link" data-link="${ep.link}">
-    <p class="episode-title">${ep.title}</p>
-  </a>
-  <p class="episode-date">${ep.date}</p>
+    // Simpan progress ke Firestore HANYA jika user login
+    if(currentUserId){
+      saveAnimeProgress({
+        path: window.location.pathname,
+        animeTitle: anime.animeTitle,
+        episode: result.episode,
+        dateSaved: new Date().toISOString(),
+        episodeUrl: url,
+        imageUrl: anime.image
+      }, currentUserId);
+    } else {
+      console.log("[Histori] User belum login, tidak menyimpan episode ini:", anime.animeTitle, "Episode", result.episode);
+    }
+
+    sidebarContainer.innerHTML = `
+<div class="anime-episodes">
+<h3 class="episode-header">Episode:</h3>
+<ul>
+  ${result.sidebarEpisodes.map(ep => `
+    <li class="episode-bubble">
+      <div class="episode-thumb-wrapper">
+        <img src="${ep.thumbnail}" alt="${ep.title}" class="episode-thumb">
+      </div>
+      <div class="episode-info">
+        <a href="#" class="episode-link" data-link="${ep.link}">
+          <p class="episode-title">${ep.title}</p>
+        </a>
+        <p class="episode-date">${ep.date}</p>
+      </div>
+    </li>
+  `).join('')}
+</ul>
 </div>
-        </li>
-      `).join('')}
-    </ul>
-  </div>
 `;
 
   } catch(err){
@@ -1107,6 +1230,7 @@ sidebarContainer.innerHTML = `
   }
 }
 
+// Sidebar click
 sidebarContainer.addEventListener('click', e => {
   const link = e.target.closest('.episode-link');
   if(!link) return;
@@ -1117,6 +1241,7 @@ sidebarContainer.addEventListener('click', e => {
   window.location.href = '/donghua/preview.html';
 });
 
+// Search form
 document.getElementById('searchForm').addEventListener('submit', e => {
   e.preventDefault();
   const query = document.getElementById('searchInput').value.trim();
@@ -1126,6 +1251,51 @@ document.getElementById('searchForm').addEventListener('submit', e => {
 });
 
 loadEpisode(epUrl);
+
+// --- Fungsi simpan ke Firestore ---
+function saveAnimeProgress({path, animeTitle, episode, dateSaved, episodeUrl, imageUrl}, userId){
+  if(!userId){
+    console.log("[Histori] Tidak ada user login, skip menyimpan.");
+    return;
+  }
+
+  const userDoc = firebase.firestore().collection('users').doc(userId);
+
+  userDoc.get().then(doc => {
+    let data = doc.data() || {};
+    let animeEpisodes = data[animeTitle] || [];
+
+    // Cek apakah episode sudah ada
+    const existingIndex = animeEpisodes.findIndex(ep => ep.episode === episode && ep.episodeUrl === episodeUrl);
+
+    if(existingIndex !== -1){
+      // Jika sudah ada, update dateSaved
+      animeEpisodes[existingIndex].dateSaved = dateSaved;
+      console.log(`[Histori] Episode sudah ada, dateSaved diperbarui: ${animeTitle} - Episode ${episode}`);
+    } else {
+      // Jika belum ada, tambahkan episode baru
+      animeEpisodes.push({path, episode, dateSaved, episodeUrl, imageUrl});
+      console.log(`[Histori] Menyimpan episode baru: ${animeTitle} - Episode ${episode}`);
+    }
+
+    // Sort berdasarkan dateSaved, ambil 5 terbaru
+    animeEpisodes.sort((a,b) => new Date(a.dateSaved) - new Date(b.dateSaved));
+    if(animeEpisodes.length > 5){
+      animeEpisodes = animeEpisodes.slice(-5);
+    }
+
+    console.log(`[Histori] 5 episode terakhir untuk ${animeTitle}:`, animeEpisodes.map(ep => ({episode: ep.episode, url: ep.episodeUrl, dateSaved: ep.dateSaved})));
+
+    // Simpan ke Firestore
+    userDoc.set({
+      ...data,
+      [animeTitle]: animeEpisodes
+    }, {merge: true})
+    .then(() => console.log("[Histori] Data tersimpan ke Firestore"))
+    .catch(err => console.error("[Histori] Gagal menyimpan ke Firestore:", err));
+
+  }).catch(err => console.error("[Histori] Gagal membaca data user:", err));
+}
 </script>
 </body>
 </html>

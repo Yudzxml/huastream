@@ -601,7 +601,7 @@ main {
       HUASTREAM.YYDZ
     </h1>
     <form id="searchForm" class="flex items-center">
-      <input type="text" id="searchInput" placeholder="Cari Donghua atau Anime..." class="focus:outline-none px-2 py-1 border rounded" required>
+      <input type="text" id="searchInput" placeholder="Cari Donghua Favoritmu..." class="focus:outline-none px-2 py-1 border rounded" required>
       <button type="submit" id="searchBtn" class="bg-blue-600 text-white px-3 py-2 hover:bg-blue-700 flex items-center gap-1">
         <i class="fas fa-search"></i> Cari
       </button>
@@ -613,7 +613,107 @@ main {
     <p class="text-center text-gray-500">Loading detail...</p>
   </div>
 </main>
+<!-- Bottom Navigation -->
+<nav class="bottom-nav">
+  <a href="/donghua/home.html" class="nav-link active">
+    <i class="fas fa-home"></i>
+    <span>Home</span>
+  </a>
+  <a href="/donghua/search.html" class="nav-link">
+    <i class="fas fa-search"></i>
+    <span>Cari</span>
+  </a>
+  <a href="../bookmark.html" class="nav-link">
+    <i class="fas fa-bookmark"></i>
+    <span>Bookmark</span>
+  </a>
+  <a href="/donghua/profil.html" class="nav-link">
+    <i class="fas fa-user"></i>
+    <span>Akun</span>
+  </a>
+</nav>
 
+<style>
+/* ===========================
+   Bottom Navigation Style
+=========================== */
+main {
+  padding-bottom: 70px;
+}
+.bottom-nav {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: space-around;
+  background: var(--surface);
+  backdrop-filter: blur(12px) saturate(120%);
+  border-top: 1px solid rgba(15,23,42,0.05);
+  padding: 0.5rem 0;
+  z-index: 60;
+  box-shadow: 0 -2px 8px rgba(0,0,0,0.05);
+}
+
+.bottom-nav .nav-link {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.2rem;
+  color: var(--muted);
+  font-size: 0.7rem;
+  text-decoration: none;
+  transition: all 0.2s ease;
+  position: relative;
+}
+
+.bottom-nav .nav-link i {
+  font-size: 1.2rem;
+  transition: all 0.2s ease;
+  background: linear-gradient(90deg, var(--accent1), var(--accent2));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.bottom-nav .nav-link.active i,
+.bottom-nav .nav-link:hover i {
+  transform: translateY(-2px) scale(1.1);
+  filter: drop-shadow(0 2px 4px rgba(37,99,235,0.4));
+}
+
+.bottom-nav .nav-link.active span,
+.bottom-nav .nav-link:hover span {
+  color: var(--accent1);
+  font-weight: 600;
+}
+
+@media (prefers-color-scheme: dark) {
+  .bottom-nav {
+    background: var(--surface);
+    border-top: 1px solid rgba(255,255,255,0.05);
+    box-shadow: 0 -2px 8px rgba(0,0,0,0.2);
+  }
+
+  .bottom-nav .nav-link {
+    color: var(--muted);
+  }
+
+  .bottom-nav .nav-link.active span,
+  .bottom-nav .nav-link:hover span {
+    color: var(--accent1);
+  }
+}
+
+/* Responsive: teks lebih kecil di mobile */
+@media (max-width: 480px) {
+  .bottom-nav .nav-link span {
+    font-size: 0.65rem;
+  }
+  .bottom-nav .nav-link i {
+    font-size: 1.1rem;
+  }
+}
+</style>
 <!-- Footer / Copyright & Contact -->
 <footer class="footer">
   <div class="container">
