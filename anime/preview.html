@@ -32,7 +32,14 @@
   <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.2/dist/tailwind.min.css" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&family=Inter:wght@400;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-
+  <!-- Firebase App (core) -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  
+  <!-- Firebase Auth -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  
+  <!-- Firebase Firestore -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 <style>
   *,
 *::before,
@@ -1156,12 +1163,15 @@ main{padding-bottom:70px;}
 }
 @media(max-width:480px){.bottom-nav .nav-link span{font-size:0.65rem;} .bottom-nav .nav-link i{font-size:1.1rem;}}
   </style>
+<script src="../firebase.js"></script>
 <script>
+// --- Element references ---
 const previewContainer = document.getElementById('previewPlayer');
 const mirrorButtonsContainer = document.getElementById('mirrorButtons');
 const sidebarContainer = document.getElementById('sidebarEpisodes');
 const epUrl = sessionStorage.getItem('targetData');
 
+// --- Load episode ---
 async function loadEpisode(url) {
   if (!url) {
     previewContainer.innerHTML = '<p class="text-center text-red-500">URL episode tidak ditemukan.</p>';
@@ -1190,7 +1200,6 @@ async function loadEpisode(url) {
     const animeEpisode = currentEpisode.number || localData.episode || '-';
 
     function renderVideo(videoUrl) {
-      // Parse downloads
       let downloads = result.downloads;
       if (typeof downloads === 'string') {
         try { downloads = JSON.parse(downloads); } 
@@ -1213,7 +1222,6 @@ async function loadEpisode(url) {
       allowfullscreen 
       loading="lazy">
     </iframe>
-
     <button class="btn-enlarge" onclick="enlargeVideo(this)">⤢</button>
   </div>
 
@@ -1297,13 +1305,84 @@ async function loadEpisode(url) {
         </ul>
       </div>
     `;
+
+    // --- Simpan progress ke Firebase ---
+    firebase.auth().onAuthStateChanged(user => {
+      if(user){
+        saveAnimeProgress({
+          path: window.location.pathname,
+          animeTitle,
+          episode: animeEpisode,
+          dateSaved: new Date().toISOString(),
+          episodeUrl: url,
+          imageUrl: animeImage
+        }, user.uid);
+      } else {
+        console.log(`[Histori] User belum login, tidak menyimpan episode: ${animeTitle} - Episode ${animeEpisode}`);
+      }
+    });
+
   } catch (err) {
     console.error(err);
     previewContainer.innerHTML = '<p class="text-center text-red-500">Terjadi kesalahan saat memuat episode.</p>';
   }
 }
 
-// Tombol perbesar fullscreen
+// --- Simpan ke Firestore ---
+function saveAnimeProgress({path, animeTitle, episode, dateSaved, episodeUrl, imageUrl}, userId){
+  if(!userId) return;
+
+  const userDoc = firebase.firestore().collection('users').doc(userId);
+
+  userDoc.get().then(doc => {
+    const data = doc.data() || {};
+    let animeEpisodes = data[animeTitle] || [];
+
+    const existingIndex = animeEpisodes.findIndex(ep => ep.episode === episode && ep.episodeUrl === episodeUrl);
+
+    if(existingIndex !== -1){
+      animeEpisodes[existingIndex].dateSaved = dateSaved;
+      console.log(`[Histori] Update dateSaved: ${animeTitle} - Episode ${episode}`);
+    } else {
+      animeEpisodes.push({path, episode, dateSaved, episodeUrl, imageUrl});
+      console.log(`[Histori] Menyimpan episode baru: ${animeTitle} - Episode ${episode}`);
+    }
+
+    // Ambil 5 episode terakhir
+    animeEpisodes.sort((a,b) => new Date(b.dateSaved) - new Date(a.dateSaved));
+    if(animeEpisodes.length > 5) animeEpisodes = animeEpisodes.slice(0,5);
+
+    userDoc.set({...data, [animeTitle]: animeEpisodes}, {merge:true})
+      .then(() => console.log("[Histori] Data tersimpan ke Firestore"))
+      .catch(err => console.error("[Histori] Gagal menyimpan ke Firestore:", err));
+
+  }).catch(err => console.error("[Histori] Gagal membaca data user:", err));
+}
+
+// --- Sidebar klik ---
+sidebarContainer.addEventListener('click', e => {
+  const link = e.target.closest('.episode-link');
+  if (!link) return;
+  e.preventDefault();
+  const epLink = link.dataset.link;
+  if (!epLink) return;
+  sessionStorage.setItem('targetData', epLink);
+  window.location.href = '/anime/preview.html';
+});
+
+// --- Search ---
+document.getElementById('searchForm').addEventListener('submit', e => {
+  e.preventDefault();
+  const query = document.getElementById('searchInput').value.trim();
+  if (!query) return;
+  sessionStorage.setItem('searchQuery', query);
+  window.location.href = `/anime/search.html`;
+});
+
+// --- Jalankan loadEpisode ---
+loadEpisode(epUrl);
+
+// --- Video fullscreen ---
 function enlargeVideo(btn) {
   const wrapper = btn.closest('.video-wrapper');
   const iframe = wrapper.querySelector('iframe');
@@ -1319,7 +1398,6 @@ function enlargeVideo(btn) {
   modal.style.alignItems = 'center';
   modal.style.justifyContent = 'center';
   modal.style.zIndex = 9999;
-  modal.style.cursor = 'default';
 
   const iframeClone = iframe.cloneNode(true);
   iframeClone.style.width = '90%';
@@ -1327,7 +1405,6 @@ function enlargeVideo(btn) {
   iframeClone.style.borderRadius = '0.5rem';
   modal.appendChild(iframeClone);
 
-  // Tombol perkecil
   const closeBtn = document.createElement('button');
   closeBtn.textContent = '✕';
   closeBtn.style.position = 'absolute';
@@ -1341,33 +1418,11 @@ function enlargeVideo(btn) {
   closeBtn.style.fontSize = '1.2rem';
   closeBtn.style.cursor = 'pointer';
   closeBtn.style.zIndex = 10;
-
   closeBtn.addEventListener('click', () => modal.remove());
   modal.appendChild(closeBtn);
 
   document.body.appendChild(modal);
 }
-
-// --- Event klik sidebar ---
-sidebarContainer.addEventListener('click', e => {
-  const link = e.target.closest('.episode-link');
-  if (!link) return;
-  e.preventDefault();
-  const epLink = link.dataset.link;
-  if (!epLink) return;
-  sessionStorage.setItem('targetData', epLink);
-  window.location.href = '/anime/preview.html';
-});
-
-document.getElementById('searchForm').addEventListener('submit', e => {
-  e.preventDefault();
-  const query = document.getElementById('searchInput').value.trim();
-  if (!query) return;
-  sessionStorage.setItem('searchQuery', query);
-  window.location.href = `/anime/search.html`;
-});
-
-loadEpisode(epUrl);
 </script>
 </body>
 </html>
