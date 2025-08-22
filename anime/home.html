@@ -911,6 +911,7 @@ async function loadScheduleAnime() {
     let days;
     try {
       days = JSON.parse(res.data.result);
+      console.log(days)
     } catch {
       container.innerHTML = `<p class="col-span-full text-center text-red-500">⚠️ Data jadwal tidak valid.</p>`;
       return;
@@ -921,7 +922,7 @@ async function loadScheduleAnime() {
       return;
     }
 
-    const dayNames = ['Minggu','Senin','Selasa','Rabu','Kamis','Jumat','Sabtu'];
+    const dayNames = ['Minggu','Senin','Selasa','Rabu','Kamis','Jumaat','Sabtu'];
     const todayName = dayNames[new Date().getDay()];
     const today = days.find(d => d.name.toLowerCase() === todayName.toLowerCase());
 
