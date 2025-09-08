@@ -885,8 +885,7 @@ main {
 <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
 
 <script>
-const apiBase = `https://api.yudzxyz.x-server.my.id/api`;
-const PAGE_LIMIT = 10;
+const PAGE_LIMIT = 663;
 
 // ===============================
 // 📌 State + Helper
@@ -907,11 +906,11 @@ async function loadScheduleAnime() {
   container.innerHTML = `<p class="col-span-full text-center">⏳ Memuat jadwal...</p>`;
 
   try {
-    const res = await axios.get(apiBase + "/samehadaku?action=jadwalupdate");
+    const res = await axios.get("https://www.sankavollerei.com/anime/samehadaku/schedule");
     let days;
     try {
-      days = JSON.parse(res.data.result);
-      console.log(days)
+      days = res.data.data.days;
+      console.log(days);
     } catch {
       container.innerHTML = `<p class="col-span-full text-center text-red-500">⚠️ Data jadwal tidak valid.</p>`;
       return;
@@ -922,9 +921,9 @@ async function loadScheduleAnime() {
       return;
     }
 
-    const dayNames = ['Minggu','Senin','Selasa','Rabu','Kamis','Jumaat','Sabtu'];
+    const dayNames = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
     const todayName = dayNames[new Date().getDay()];
-    const today = days.find(d => d.name.toLowerCase() === todayName.toLowerCase());
+    const today = days.find(d => d.day.toLowerCase() === todayName.toLowerCase());
 
     if (!today) {
       container.innerHTML = `<p class="col-span-full text-center">Tidak ada jadwal anime untuk hari ini.</p>`;
@@ -934,19 +933,22 @@ async function loadScheduleAnime() {
     container.innerHTML = `
       <div class="day-block mb-6">
         <h2 class="text-lg font-bold mb-2">
-          <i class="fa fa-calendar-day mr-2"></i> ${today.name}
+          <i class="fa fa-calendar-day mr-2"></i> ${today.day}
         </h2>
         <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
-          ${today.anime.map((anime, i) => `
+          ${today.animeList.map((anime, i) => `
             <div class="anime-card bg-white dark:bg-gray-800 shadow rounded-xl overflow-hidden cursor-pointer transition-transform hover:scale-105" data-index="${i}">
-              <img src="${anime.image}" alt="${anime.title}" class="w-full h-40 object-cover">
+              <img src="${anime.poster || 'https://via.placeholder.com/150'}" alt="${anime.title}" class="w-full h-40 object-cover">
               <div class="p-3">
                 <h3 class="font-semibold text-sm line-clamp-2">${anime.title}</h3>
                 <p class="text-xs text-gray-600 dark:text-gray-400 flex items-center">
-                  <i class="fa fa-clock mr-1"></i> ${anime.time || '-'}
+                  <i class="fa fa-clock mr-1"></i> ${anime.estimation || '-'}
                 </p>
                 <p class="text-xs text-gray-600 dark:text-gray-400 flex items-center">
-                  <i class="fa fa-tag mr-1"></i> ${anime.genre || '-'}
+                  <i class="fa fa-tag mr-1"></i> ${anime.genres || '-'}
+                </p>
+                <p class="text-xs text-gray-600 dark:text-gray-400 flex items-center">
+                  <i class="fa fa-star mr-1"></i> ${anime.score || '-'}
                 </p>
               </div>
             </div>
@@ -956,18 +958,18 @@ async function loadScheduleAnime() {
     `;
 
     container.querySelectorAll('.anime-card').forEach((card, i) => {
-  card.addEventListener('click', () => {
-    const animeItem = today.anime[i];
-    let animeUrl = animeItem.url || animeItem.link || null;
-    if (!animeUrl) {
-      alert("Maaf, data anime ini tidak lengkap.");
-      return;
-    }
-    localStorage.setItem('targetData_schedule', JSON.stringify({ url: animeUrl }));
-    console.log('STORAGE TERSIMPAN: '+animeUrl)
-    window.location.href = '/anime/info.html';
-  });
-});
+      card.addEventListener('click', () => {
+        const animeItem = today.animeList[i];
+        let animeUrl = animeItem.animeId || null;
+        if (!animeUrl) {
+          alert("Maaf, data anime ini tidak lengkap.");
+          return;
+        }
+        localStorage.setItem('targetData_schedule', JSON.stringify({ url: animeUrl }));
+        console.log('STORAGE TERSIMPAN: '+animeUrl)
+        window.location.href = '/anime/info.html';
+      });
+    });
 
   } catch (err) {
     console.error(err);
@@ -983,20 +985,20 @@ async function loadTopAnime() {
   container.innerHTML = `<p class="text-center">⏳ Memuat top anime...</p>`;
 
   try {
-    const res = await axios.get(apiBase + "/samehadaku?action=gettopanime");
-    const topAnime = JSON.parse(res.data.result);
+    const res = await axios.get("https://www.sankavollerei.com/anime/samehadaku/home");
+    const topAnime = res.data.data.top10.animeList;
 
     container.innerHTML = "";
-    topAnime.forEach((anime, index) => {
+    topAnime.forEach((anime) => {
       const card = document.createElement('div');
       card.className = 'anime-card p-2 rounded-xl shadow hover:scale-[1.02] transition relative cursor-pointer flex flex-col';
       card.innerHTML = `
-        <img src="${anime.img}" alt="${anime.title}" class="rounded-lg w-full h-40 object-cover">
-        <span class="absolute top-2 left-2 bg-yellow-400 text-black text-xs font-bold px-2 py-1 rounded">#${index + 1}</span>
+        <img src="${anime.poster}" alt="${anime.title}" class="rounded-lg w-full h-40 object-cover">
+        <span class="absolute top-2 left-2 bg-yellow-400 text-black text-xs font-bold px-2 py-1 rounded">#${anime.rank}</span>
         <div class="flex flex-col items-center mt-2 w-full">
           <h3 class="text-sm font-semibold text-gray-800 dark:text-white truncate text-center">${anime.title}</h3>
           <p class="text-xs text-yellow-500 mt-1 flex items-center justify-center">
-            <i class="fa fa-star mr-1"></i>${anime.rating}
+            <i class="fa fa-star mr-1"></i>${anime.score}
           </p>
         </div>
       `;
@@ -1021,13 +1023,14 @@ async function loadLatestAnime(page = 1) {
   container.innerHTML = `<p class="text-center">⏳ Memuat anime terbaru...</p>`;
 
   try {
-    const res = await axios.get(apiBase + `/samehadaku?action=latest&page=${page}`);
-    const latestAnime = res.data.result;
+    const res = await axios.get(`https://www.sankavollerei.com/anime/samehadaku/recent?page=${page}`);
+    const latestAnime = res.data.data.animeList;
+    const pagination = res.data.pagination;
     container.innerHTML = '';
 
     if (!latestAnime || latestAnime.length === 0) {
       container.innerHTML = `<p class="text-center text-gray-500 dark:text-gray-400">Tidak ada anime terbaru.</p>`;
-      document.getElementById('prevPage').disabled = page === 1;
+      document.getElementById('prevPage').disabled = true;
       document.getElementById('nextPage').disabled = true;
       return;
     }
@@ -1036,11 +1039,11 @@ async function loadLatestAnime(page = 1) {
       const card = document.createElement('div');
       card.className = 'anime-card';
       card.innerHTML = `
-        <img src="${anime.image}" alt="${anime.title}">
+        <img src="${anime.poster}" alt="${anime.title}">
         <div class="p-2">
           <h3 class="font-semibold">${anime.title}</h3>
-          <p><i class="fa-solid fa-clapperboard"></i> Episode: ${anime.episode}</p>
-          <p><i class="fa-regular fa-calendar"></i> ${anime.released}</p>
+          <p><i class="fa-solid fa-clapperboard"></i> Episode: ${anime.episodes}</p>
+          <p><i class="fa-regular fa-calendar"></i> ${anime.releasedOn}</p>
         </div>
       `;
       card.addEventListener('click', () => {
@@ -1051,9 +1054,9 @@ async function loadLatestAnime(page = 1) {
     });
 
     // Update pagination
-    document.getElementById('currentPage').textContent = page;
-    document.getElementById('prevPage').disabled = page === 1;
-    document.getElementById('nextPage').disabled = latestAnime.length < PAGE_LIMIT;
+    document.getElementById('currentPage').textContent = pagination.currentPage;
+    document.getElementById('prevPage').disabled = !pagination.hasPrevPage;
+    document.getElementById('nextPage').disabled = !pagination.hasNextPage;
 
   } catch (err) {
     console.error(err);

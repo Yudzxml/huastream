@@ -192,6 +192,7 @@ header h1{
 }
 </style>
 <style>
+/* --- Card anime --- */
 .anime-card {
   background: var(--surface);
   border-radius: 12px;
@@ -211,16 +212,16 @@ header h1{
   box-shadow: 0 14px 28px rgba(37,99,235,0.14);
 }
 
-.anime-img {
+.anime-card img {
   width: 100%;
   height: 160px;
   object-fit: cover;
   border-radius: 10px;
-  transition: transform 0.25s ease;
   margin-bottom: 0.5rem;
+  transition: transform 0.25s ease;
 }
 
-.anime-card:hover .anime-img {
+.anime-card:hover img {
   transform: scale(1.05);
 }
 
@@ -243,17 +244,36 @@ header h1{
   margin: 0.15rem 0;
 }
 
-.anime-card p.genres {
-  font-size: 0.72rem;
-  color: var(--accent1);
-  text-align: center;
+/* --- Genre badge --- */
+.anime-card .genres {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.3rem;
   margin: 0.2rem 0;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 
-.anime-card a {
+.anime-card .badge {
+  display: inline-block;
+  padding: 0.2rem 0.5rem;
+  font-size: 0.65rem;
+  font-weight: 500;
+  border-radius: 9999px;
+  background: linear-gradient(90deg, var(--accent1), var(--accent2));
+  color: #fff;
+  text-align: center;
+  white-space: nowrap;
+  box-shadow: 0 4px 12px rgba(37,99,235,0.1);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.anime-card .badge:hover {
+  transform: translateY(-1px) scale(1.05);
+  box-shadow: 0 6px 16px rgba(37,99,235,0.15);
+}
+
+/* --- Watch link --- */
+.anime-card .watch-link {
   display: block;
   text-align: center;
   padding: 0.3rem 0.6rem;
@@ -267,11 +287,12 @@ header h1{
   transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
-.anime-card a:hover {
+.anime-card .watch-link:hover {
   transform: translateY(-1px);
   box-shadow: 0 6px 16px rgba(37,99,235,0.1);
 }
 
+/* --- Grid hasil pencarian --- */
 #searchResults {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
@@ -279,29 +300,23 @@ header h1{
   margin-top: 0.5rem;
 }
 
+/* --- Responsive --- */
 @media (max-width: 640px) {
-  .anime-card {
-    padding: 0.4rem;
-  }
-  .anime-img {
-    height: 130px;
-  }
-  .anime-card h3 {
-    font-size: 0.85rem;
-  }
-  .anime-card p, .anime-card a {
-    font-size: 0.7rem;
-  }
+  .anime-card img { height: 130px; }
+  .anime-card h3 { font-size: 0.85rem; }
+  .anime-card p, .anime-card .watch-link, .anime-card .badge { font-size: 0.7rem; }
 }
 
+/* --- Mode gelap --- */
 @media (prefers-color-scheme: dark) {
   .anime-card {
-    background: var(--surface);
+    background: rgba(10,14,20,0.55);
     box-shadow: 0 6px 18px rgba(0,0,0,0.3);
   }
-  .anime-card h3 { color: var(--text); }
-  .anime-card p { color: var(--muted); }
-  .anime-card p.genres { color: var(--accent2); }
+  .anime-card h3 { color: #e6eef8; }
+  .anime-card p { color: #9ca3af; }
+  .anime-card .badge { color: #fff; }
+  .anime-card .watch-link { color: #fff; }
 }
 </style>
 <style>
@@ -952,9 +967,11 @@ async function fetchAnimeBySearch(query, page = 1) {
 
 async function fetchAnimeByGenre(genre, page = 1) {
   try {
-    const res = await fetch(`${apiGenreBase}${genre}&page=${page}`);
+    const res = await fetch(`https://www.sankavollerei.com/anime/samehadaku/genres/${genre}?page=${page}`);
     const data = await res.json();
-    return data.status === 200 && data.result ? JSON.parse(data.result).animeList : [];
+    // ambil animeList dari data.data
+    return data.data ? data.data.animeList : [];
+    console.log(data)
   } catch (err) {
     console.error('Error fetch genre:', err);
     return [];
@@ -963,6 +980,7 @@ async function fetchAnimeByGenre(genre, page = 1) {
 
 // ===== Render hasil ke HTML =====
 function renderAnimeList(animeList) {
+  // cek jika daftar kosong
   if (!animeList || animeList.length === 0) {
     animeListDiv.innerHTML = '<p>Tidak ada anime ditemukan.</p>';
     pagination.style.display = 'none';
@@ -970,32 +988,59 @@ function renderAnimeList(animeList) {
     return;
   }
 
-  animeListDiv.innerHTML = animeList.map(anime => `
-  <div class="anime-card">
-    <img src="${anime.thumbnail || anime.img}" alt="${anime.title}" width="150">
-    <h3>${anime.title}</h3>
-    <p>${anime.description || ''}</p>
-    <p>Type: ${anime.type || ''} | Score: ${anime.score || ''} | Status: ${anime.status || ''}</p>
-    <p class="genres">${anime.genres ? anime.genres.join(', ') : ''}</p>
-    ${anime.link ? `<a href="#" class="watch-link" data-url="${anime.link}">Watch Now</a>` : ''}
-  </div>
-`).join('');
+  // render daftar anime
+  animeListDiv.innerHTML = animeList.map(anime => {
+    // debug: pastikan link tersedia
+    console.log('anime.link:', anime.link);
 
-document.querySelectorAll('.watch-link').forEach(link => {
+    return `
+      <div class="anime-card">
+        <img src="${anime.thumbnail || anime.img}" alt="${anime.title}" width="150">
+        <h3>${anime.title}</h3>
+        <p>${anime.description || ''}</p>
+        <p>Type: ${anime.type || ''} | Score: ${anime.score || ''} | Status: ${anime.status || ''}</p>
+        <p class="genres">${anime.genres ? anime.genres.join(', ') : ''}</p>
+        ${anime.link ? `<a href="#" class="watch-link" data-url="${anime.link}">Watch Now</a>` : ''}
+      </div>
+    `;
+  }).join('');
+
+  // pasang event listener untuk setiap link
+  document.querySelectorAll('.watch-link').forEach(link => {
   link.addEventListener('click', e => {
-    e.preventDefault(); 
+    e.preventDefault();
+
     const targetUrl = link.dataset.url;
+    console.log('Clicked targetUrl:', targetUrl); // debug
+
     if (targetUrl) {
-      sessionStorage.setItem('targetData', targetUrl); 
-      window.location.href = '/anime/info.html';
+      // ambil semua bagian URL yang tidak kosong
+      const parts = targetUrl.split('/').filter(Boolean);
+      // ambil elemen terakhir sebagai ID
+      const id = parts.length ? parts[parts.length - 1] : null;
+
+      if (id) {
+        console.log('Extracted id:', id); // debug
+        // simpan ID di localStorage
+        localStorage.setItem('targetData', JSON.stringify({ animeId: id }));
+        // pindah ke halaman info
+        window.location.href = '/anime/info.html';
+      } else {
+        console.warn('ID tidak ditemukan di URL!');
+      }
+    } else {
+      console.warn('Data-url kosong!');
     }
   });
 });
+
+  // tampilkan label search & pagination
   labelSearch.style.display = 'inline-block';
   pagination.style.display = 'flex';
   currentPageSpan.textContent = currentPage;
   prevBtn.disabled = currentPage === 1;
 }
+// ===== Render genre terbaru =====
 function renderAnimeGenre(animeList) {
   if (!animeList || animeList.length === 0) {
     animeListDiv.innerHTML = '<p>Tidak ada anime ditemukan.</p>';
@@ -1004,28 +1049,36 @@ function renderAnimeGenre(animeList) {
     return;
   }
 
-  animeListDiv.innerHTML = animeList.map(anime => `
-  <div class="anime-card">
-    <img src="${anime.thumbnail}" alt="${anime.title}" width="150">
-    <h3>${anime.title}</h3>
-    <p>${anime.description || ''}</p>
-    <p>Type: ${anime.type || ''} | Score: ${anime.score || ''} | Status: ${anime.status || ''} | Views: ${anime.views || ''}</p>
-    <p class="genres">${anime.genres ? anime.genres.join(', ') : ''}</p>
-    ${anime.url ? `<a href="#" class="watch-link" data-url="${anime.url}">Watch Now</a>` : ''}
-  </div>
-`).join('');
+  animeListDiv.innerHTML = animeList.map(anime => {
+    const genresHTML = (anime.genreList || [])
+      .map(g => `<span class="badge">${g.title}</span>`)
+      .join(' ');
 
-document.querySelectorAll('.watch-link').forEach(link => {
-  link.addEventListener('click', e => {
-    e.preventDefault();
-    const targetUrl = link.dataset.url;
-    if (targetUrl) {
-      sessionStorage.setItem('targetData', targetUrl);
-      window.location.href = '/anime/info.html'; 
-    }
+    return `
+      <div class="anime-card">
+        <img src="${anime.poster}" alt="${anime.title}" width="150">
+        <h3>${anime.title}</h3>
+        <p>Type: ${anime.type || ''} | Score: ${anime.score || ''} | Status: ${anime.status || ''}</p>
+        <div class="genres">${genresHTML}</div>
+        ${anime.href ? `<a href="#" class="watch-link" data-id="${anime.animeId}" data-url="${anime.href}">Watch Now</a>` : ''}
+      </div>
+    `;
+  }).join('');
+
+  // Event listener untuk tombol "Watch Now"
+  document.querySelectorAll('.watch-link').forEach(link => {
+    link.addEventListener('click', e => {
+      e.preventDefault();
+      const animeId = link.dataset.id;
+      const targetUrl = link.dataset.url;
+      if (animeId && targetUrl) {
+        // Simpan di localStorage dengan format { animeId: ..., url: ... }
+        localStorage.setItem('targetData', JSON.stringify({ animeId, url: targetUrl }));
+        window.location.href = '/anime/info.html';
+      }
+    });
   });
-});
-  
+
   labelSearch.style.display = 'inline-block';
   pagination.style.display = 'flex';
   currentPageSpan.textContent = currentPage;
