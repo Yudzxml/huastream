@@ -905,76 +905,98 @@ async function loadScheduleAnime() {
   const container = document.getElementById("scheduleAnime");
   container.innerHTML = `<p class="col-span-full text-center">⏳ Memuat jadwal...</p>`;
 
-  try {
-    const res = await axios.get("https://www.sankavollerei.com/anime/samehadaku/schedule");
-    let days;
+  const mainApi = "https://www.sankavollerei.com/anime/samehadaku/schedule";
+  const fallbackApi = "https://api.yudzxyz.x-server.my.id/api/samehadaku?action=jadwalupdate";
+
+  async function fetchData(url, isFallback = false) {
     try {
-      days = res.data.data.days;
-      console.log(days);
-    } catch {
-      container.innerHTML = `<p class="col-span-full text-center text-red-500">⚠️ Data jadwal tidak valid.</p>`;
-      return;
+      const res = await axios.get(url);
+
+      if (!isFallback) {
+        // === FORMAT API UTAMA ===
+        const days = res.data.data?.days;
+        if (!Array.isArray(days)) throw new Error("Format utama tidak valid");
+        return { source: "main", days };
+      } else {
+        // === FORMAT API FALLBACK ===
+        const result = JSON.parse(res.data.result);
+        if (!Array.isArray(result)) throw new Error("Format fallback tidak valid");
+        return { source: "fallback", days: result };
+      }
+    } catch (err) {
+      throw err;
     }
-
-    if (!Array.isArray(days) || days.length === 0) {
-      container.innerHTML = `<p class="col-span-full text-center">Tidak ada jadwal tersedia.</p>`;
-      return;
-    }
-
-    const dayNames = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
-    const todayName = dayNames[new Date().getDay()];
-    const today = days.find(d => d.day.toLowerCase() === todayName.toLowerCase());
-
-    if (!today) {
-      container.innerHTML = `<p class="col-span-full text-center">Tidak ada jadwal anime untuk hari ini.</p>`;
-      return;
-    }
-
-    container.innerHTML = `
-      <div class="day-block mb-6">
-        <h2 class="text-lg font-bold mb-2">
-          <i class="fa fa-calendar-day mr-2"></i> ${today.day}
-        </h2>
-        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
-          ${today.animeList.map((anime, i) => `
-            <div class="anime-card bg-white dark:bg-gray-800 shadow rounded-xl overflow-hidden cursor-pointer transition-transform hover:scale-105" data-index="${i}">
-              <img src="${anime.poster || 'https://via.placeholder.com/150'}" alt="${anime.title}" class="w-full h-40 object-cover">
-              <div class="p-3">
-                <h3 class="font-semibold text-sm line-clamp-2">${anime.title}</h3>
-                <p class="text-xs text-gray-600 dark:text-gray-400 flex items-center">
-                  <i class="fa fa-clock mr-1"></i> ${anime.estimation || '-'}
-                </p>
-                <p class="text-xs text-gray-600 dark:text-gray-400 flex items-center">
-                  <i class="fa fa-tag mr-1"></i> ${anime.genres || '-'}
-                </p>
-                <p class="text-xs text-gray-600 dark:text-gray-400 flex items-center">
-                  <i class="fa fa-star mr-1"></i> ${anime.score || '-'}
-                </p>
-              </div>
-            </div>
-          `).join("")}
-        </div>
-      </div>
-    `;
-
-    container.querySelectorAll('.anime-card').forEach((card, i) => {
-      card.addEventListener('click', () => {
-        const animeItem = today.animeList[i];
-        let animeUrl = animeItem.animeId || null;
-        if (!animeUrl) {
-          alert("Maaf, data anime ini tidak lengkap.");
-          return;
-        }
-        localStorage.setItem('targetData_schedule', JSON.stringify({ url: animeUrl }));
-        console.log('STORAGE TERSIMPAN: '+animeUrl)
-        window.location.href = '/anime/info.html';
-      });
-    });
-
-  } catch (err) {
-    console.error(err);
-    container.innerHTML = `<p class="col-span-full text-center text-red-500">Gagal memuat jadwal anime.</p>`;
   }
+
+  let data;
+  try {
+    data = await fetchData(mainApi);
+  } catch (err) {
+    console.warn("⚠️ API utama gagal, coba fallback...");
+    try {
+      data = await fetchData(fallbackApi, true);
+    } catch (err2) {
+      console.error("❌ API fallback juga gagal:", err2);
+      container.innerHTML = `<p class="col-span-full text-center text-red-500">Gagal memuat jadwal anime (utama & fallback).</p>`;
+      return;
+    }
+  }
+
+  const days = data.days;
+  const dayNames = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  const todayName = dayNames[new Date().getDay()];
+
+  // Cari data hari ini
+  const today = days.find(d => d.day.toLowerCase() === todayName.toLowerCase());
+  if (!today) {
+    container.innerHTML = `<p class="col-span-full text-center">Tidak ada jadwal anime untuk hari ini.</p>`;
+    return;
+  }
+
+  // Ambil list anime sesuai sumber
+  const animeList = data.source === "main" ? today.animeList : today.anime;
+
+  container.innerHTML = `
+    <div class="day-block mb-6">
+      <h2 class="text-lg font-bold mb-2">
+        <i class="fa fa-calendar-day mr-2"></i> ${today.name || today.day}
+      </h2>
+      <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
+        ${animeList.map((anime, i) => `
+          <div class="anime-card bg-white dark:bg-gray-800 shadow rounded-xl overflow-hidden cursor-pointer transition-transform hover:scale-105" data-index="${i}">
+            <img src="${(data.source === "main" ? anime.poster : anime.image) || 'https://via.placeholder.com/150'}" alt="${anime.title}" class="w-full h-40 object-cover">
+            <div class="p-3">
+              <h3 class="font-semibold text-sm line-clamp-2">${anime.title}</h3>
+              <p class="text-xs text-gray-600 dark:text-gray-400 flex items-center">
+                <i class="fa fa-clock mr-1"></i> ${(data.source === "main" ? anime.estimation : anime.time) || '-'}
+              </p>
+              <p class="text-xs text-gray-600 dark:text-gray-400 flex items-center">
+                <i class="fa fa-tag mr-1"></i> ${(data.source === "main" ? anime.genres : anime.genre) || '-'}
+              </p>
+              <p class="text-xs text-gray-600 dark:text-gray-400 flex items-center">
+                <i class="fa fa-star mr-1"></i> ${(anime.score) || '-'}
+              </p>
+            </div>
+          </div>
+        `).join("")}
+      </div>
+    </div>
+  `;
+
+  // Event klik anime-card
+  container.querySelectorAll('.anime-card').forEach((card, i) => {
+    card.addEventListener('click', () => {
+      const animeItem = animeList[i];
+      let animeUrl = data.source === "main" ? animeItem.animeId : animeItem.url;
+      if (!animeUrl) {
+        alert("Maaf, data anime ini tidak lengkap.");
+        return;
+      }
+      localStorage.setItem('targetData_schedule', JSON.stringify({ url: animeUrl }));
+      console.log('STORAGE TERSIMPAN: ' + animeUrl);
+      window.location.href = '/anime/info.html';
+    });
+  });
 }
 
 // ===============================
@@ -984,35 +1006,82 @@ async function loadTopAnime() {
   const container = document.getElementById("topAnime");
   container.innerHTML = `<p class="text-center">⏳ Memuat top anime...</p>`;
 
-  try {
-    const res = await axios.get("https://www.sankavollerei.com/anime/samehadaku/home");
-    const topAnime = res.data.data.top10.animeList;
+  const mainApi = "https://www.sankavollerei.com/anime/samehadaku/home";
+  const fallbackApi = "https://api.yudzxyz.x-server.my.id/api/samehadaku?action=gettopanime";
 
-    container.innerHTML = "";
-    topAnime.forEach((anime) => {
-      const card = document.createElement('div');
-      card.className = 'anime-card p-2 rounded-xl shadow hover:scale-[1.02] transition relative cursor-pointer flex flex-col';
-      card.innerHTML = `
-        <img src="${anime.poster}" alt="${anime.title}" class="rounded-lg w-full h-40 object-cover">
-        <span class="absolute top-2 left-2 bg-yellow-400 text-black text-xs font-bold px-2 py-1 rounded">#${anime.rank}</span>
-        <div class="flex flex-col items-center mt-2 w-full">
-          <h3 class="text-sm font-semibold text-gray-800 dark:text-white truncate text-center">${anime.title}</h3>
-          <p class="text-xs text-yellow-500 mt-1 flex items-center justify-center">
-            <i class="fa fa-star mr-1"></i>${anime.score}
-          </p>
-        </div>
-      `;
-      card.addEventListener('click', () => {
-        localStorage.setItem('targetData_top', JSON.stringify(anime));
-        window.location.href = '/anime/info.html';
-      });
-      container.appendChild(card);
-    });
+  async function fetchData(url, isFallback = false) {
+    try {
+      const res = await axios.get(url);
 
-  } catch (err) {
-    console.error(err);
-    container.innerHTML = `<p class="text-center text-red-500">Gagal memuat top anime.</p>`;
+      if (!isFallback) {
+        // === FORMAT API UTAMA ===
+        const list = res.data.data?.top10?.animeList;
+        if (!Array.isArray(list)) throw new Error("Format utama tidak valid");
+        return {
+          source: "main",
+          anime: list.map(a => ({
+            rank: a.rank,
+            title: a.title,
+            score: a.score,
+            poster: a.poster,
+            url: a.animeId // asumsi untuk link detail
+          }))
+        };
+      } else {
+        // === FORMAT API FALLBACK ===
+        const result = JSON.parse(res.data.result);
+        if (!Array.isArray(result)) throw new Error("Format fallback tidak valid");
+        return {
+          source: "fallback",
+          anime: result.map(a => ({
+            rank: a.top,
+            title: a.title,
+            score: a.rating,
+            poster: a.img,
+            url: a.url
+          }))
+        };
+      }
+    } catch (err) {
+      throw err;
+    }
   }
+
+  let data;
+  try {
+    data = await fetchData(mainApi);
+  } catch (err) {
+    console.warn("⚠️ API utama gagal, coba fallback...");
+    try {
+      data = await fetchData(fallbackApi, true);
+    } catch (err2) {
+      console.error("❌ API fallback juga gagal:", err2);
+      container.innerHTML = `<p class="text-center text-red-500">Gagal memuat top anime (utama & fallback).</p>`;
+      return;
+    }
+  }
+
+  // Render anime list
+  container.innerHTML = "";
+  data.anime.forEach((anime) => {
+    const card = document.createElement('div');
+    card.className = 'anime-card p-2 rounded-xl shadow hover:scale-[1.02] transition relative cursor-pointer flex flex-col';
+    card.innerHTML = `
+      <img src="${anime.poster}" alt="${anime.title}" class="rounded-lg w-full h-40 object-cover">
+      <span class="absolute top-2 left-2 bg-yellow-400 text-black text-xs font-bold px-2 py-1 rounded">#${anime.rank}</span>
+      <div class="flex flex-col items-center mt-2 w-full">
+        <h3 class="text-sm font-semibold text-gray-800 dark:text-white truncate text-center">${anime.title}</h3>
+        <p class="text-xs text-yellow-500 mt-1 flex items-center justify-center">
+          <i class="fa fa-star mr-1"></i>${anime.score}
+        </p>
+      </div>
+    `;
+    card.addEventListener('click', () => {
+      localStorage.setItem('targetData_top', JSON.stringify(anime));
+      window.location.href = '/anime/info.html';
+    });
+    container.appendChild(card);
+  });
 }
 
 // ===============================
@@ -1022,46 +1091,94 @@ async function loadLatestAnime(page = 1) {
   const container = document.getElementById("latestAnime");
   container.innerHTML = `<p class="text-center">⏳ Memuat anime terbaru...</p>`;
 
-  try {
-    const res = await axios.get(`https://www.sankavollerei.com/anime/samehadaku/recent?page=${page}`);
-    const latestAnime = res.data.data.animeList;
-    const pagination = res.data.pagination;
-    container.innerHTML = '';
+  const mainApi = `https://www.sankavollerei.com/anime/samehadaku/recent?page=${page}`;
+  const fallbackApi = `https://api.yudzxyz.x-server.my.id/api/samehadaku?action=latest&page=${page}`;
 
-    if (!latestAnime || latestAnime.length === 0) {
-      container.innerHTML = `<p class="text-center text-gray-500 dark:text-gray-400">Tidak ada anime terbaru.</p>`;
-      document.getElementById('prevPage').disabled = true;
-      document.getElementById('nextPage').disabled = true;
+  async function fetchData(url, isFallback = false) {
+    try {
+      const res = await axios.get(url);
+
+      if (!isFallback) {
+        // === FORMAT API UTAMA ===
+        const list = res.data.data?.animeList;
+        if (!Array.isArray(list)) throw new Error("Format utama tidak valid");
+        return {
+          source: "main",
+          anime: list.map(a => ({
+            title: a.title,
+            poster: a.poster,
+            episodes: a.episodes,
+            released: a.releasedOn,
+            url: a.animeId
+          })),
+          pagination: res.data.pagination
+        };
+      } else {
+        // === FORMAT API FALLBACK ===
+        const result = res.data.result;
+        if (!Array.isArray(result)) throw new Error("Format fallback tidak valid");
+        return {
+          source: "fallback",
+          anime: result.map(a => ({
+            title: a.title,
+            poster: a.image,
+            episodes: a.episode,
+            released: a.released,
+            url: a.link
+          })),
+          pagination: { currentPage: page, hasPrevPage: page > 1, hasNextPage: true }
+        };
+      }
+    } catch (err) {
+      throw err;
+    }
+  }
+
+  let data;
+  try {
+    data = await fetchData(mainApi);
+  } catch (err) {
+    console.warn("⚠️ API utama gagal, coba fallback...");
+    try {
+      data = await fetchData(fallbackApi, true);
+    } catch (err2) {
+      console.error("❌ API fallback juga gagal:", err2);
+      container.innerHTML = `<p class="text-center text-red-500">Gagal memuat anime terbaru (utama & fallback).</p>`;
       return;
     }
-
-    latestAnime.forEach(anime => {
-      const card = document.createElement('div');
-      card.className = 'anime-card';
-      card.innerHTML = `
-        <img src="${anime.poster}" alt="${anime.title}">
-        <div class="p-2">
-          <h3 class="font-semibold">${anime.title}</h3>
-          <p><i class="fa-solid fa-clapperboard"></i> Episode: ${anime.episodes}</p>
-          <p><i class="fa-regular fa-calendar"></i> ${anime.releasedOn}</p>
-        </div>
-      `;
-      card.addEventListener('click', () => {
-        localStorage.setItem('targetData_latest', JSON.stringify(anime));
-        window.location.href = '/anime/info.html';
-      });
-      container.appendChild(card);
-    });
-
-    // Update pagination
-    document.getElementById('currentPage').textContent = pagination.currentPage;
-    document.getElementById('prevPage').disabled = !pagination.hasPrevPage;
-    document.getElementById('nextPage').disabled = !pagination.hasNextPage;
-
-  } catch (err) {
-    console.error(err);
-    container.innerHTML = `<p class="text-center text-red-500">Gagal memuat anime terbaru.</p>`;
   }
+
+  // Render anime list
+  container.innerHTML = "";
+  if (!data.anime || data.anime.length === 0) {
+    container.innerHTML = `<p class="text-center text-gray-500 dark:text-gray-400">Tidak ada anime terbaru.</p>`;
+    document.getElementById('prevPage').disabled = true;
+    document.getElementById('nextPage').disabled = true;
+    return;
+  }
+
+  data.anime.forEach(anime => {
+    const card = document.createElement('div');
+    card.className = 'anime-card';
+    card.innerHTML = `
+      <img src="${anime.poster}" alt="${anime.title}">
+      <div class="p-2">
+        <h3 class="font-semibold">${anime.title}</h3>
+        <p><i class="fa-solid fa-clapperboard"></i> Episode: ${anime.episodes}</p>
+        <p><i class="fa-regular fa-calendar"></i> ${anime.released}</p>
+      </div>
+    `;
+    card.addEventListener('click', () => {
+      localStorage.setItem('targetData_latest', JSON.stringify(anime));
+      window.location.href = '/anime/info.html';
+    });
+    container.appendChild(card);
+  });
+
+  // Update pagination
+  document.getElementById('currentPage').textContent = data.pagination.currentPage;
+  document.getElementById('prevPage').disabled = !data.pagination.hasPrevPage;
+  document.getElementById('nextPage').disabled = !data.pagination.hasNextPage;
 }
 
 // ===============================

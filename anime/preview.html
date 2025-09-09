@@ -1268,11 +1268,148 @@ async function loadEpisode(episodeId) {
 });
 
   } catch {
+    await loadEpisodeFallback(episodeId)
+  }
+}
+async function loadEpisodeFallback(episodeId) {
+  if (!episodeId) {
+    previewContainer.innerHTML = '<p class="text-center text-red-500">Episode tidak ditemukan.</p>';
+    return;
+  }
+
+  try {
+    // 🔥 Ambil detail anime
+    const resDetail = await fetch(`https://api.yudzxyz.x-server.my.id/api/samehadaku?action=detail&url=${episodeId}`);
+    const dataDetail = await resDetail.json();
+    if (!dataDetail.result) throw new Error("Gagal ambil detail");
+
+    const anime = dataDetail.result;
+
+    // 🔥 Ambil stream & download
+    const resStream = await fetch(`https://api.yudzxyz.x-server.my.id/api/samehadaku?action=getlinkvideo&url=${episodeId}`);
+    const dataStream = await resStream.json();
+    if (!dataStream.result) throw new Error("Gagal ambil stream");
+
+    const streams = dataStream.result.streams || [];
+    let downloadsRaw = dataStream.result.downloads || "{}";
+    let downloads = {};
+    try {
+      downloads = JSON.parse(downloadsRaw);
+    } catch (e) {
+      console.warn("Downloads parse error:", e);
+    }
+
+    // ambil angka terakhir dari judul episode
+    const episodeTitle = anime.episodes?.find(ep => ep.link === episodeId)?.title || "Episode";
+    const episodeNumberMatch = episodeTitle.match(/(\d+)\s*$/); // ambil angka terakhir
+    const animeEpisodeNumber = episodeNumberMatch ? episodeNumberMatch[1] : "-";
+
+    const animeTitle = anime.title || "-";
+    const animeImage = anime.img || "";
+
+    previewContainer.innerHTML = `
+<div class="video-card">
+  <p class="video-error-info"><i class="fa fa-exclamation-triangle"></i>Jika stream gagal diputar, ganti kualitas video di bawah</p>
+  <div class="video-wrapper">
+    <iframe src="" class="video-iframe" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen loading="lazy"></iframe>
+    <button class="btn-enlarge" onclick="enlargeVideo(this)">⤢</button>
+  </div>
+  <div class="mirror-container">
+    <p class="mirror-text">Pilih Kualitas / Server:</p>
+    <select id="qualitySelect" class="mirror-select">
+      ${streams.map((s, i) => `<option value="${s.url}" ${i === 0 ? "selected" : ""}>${s.quality}</option>`).join("")}
+    </select>
+  </div>
+  <div class="anime-episodes-container">
+    <p class="episode-header">Episode:</p>
+    <div class="episode-scroll">
+      <div class="episode-buttons-wrapper" id="episodeButtonsWrapper"></div>
+    </div>
+  </div>
+  <div class="anime-info-container">
+    <div class="anime-image-wrapper">
+      <img src="${animeImage}" alt="${animeTitle}" class="anime-image">
+    </div>
+    <div class="video-info-overlay">
+      <h2 class="video-title">${animeTitle}</h2>
+      <p class="video-episode">Episode ${animeEpisodeNumber}</p>
+    </div>
+  </div>
+  <div class="download-container" style="margin-top:1rem; max-height:400px; overflow-y:auto;">
+    <h3>Download:</h3>
+    ${Object.entries(downloads).map(([format, qualities]) => `
+      <div class="download-format">
+        <p><strong>${format}</strong></p>
+        ${Object.entries(qualities).map(([quality, urls]) => `
+          <div class="download-quality" style="display:grid; grid-template-columns:repeat(2,1fr); gap:0.5rem; padding:0.25rem 0;">
+            ${urls.map((link, i) => `<a href="${link}" target="_blank" class="download-link">${quality} - Link ${i + 1}</a>`).join("")}
+          </div>
+        `).join("")}
+      </div>
+    `).join("")}
+  </div>
+</div>
+`;
+
+    // handle iframe & stream
+    const iframe = previewContainer.querySelector(".video-iframe");
+    const qualitySelect = document.getElementById("qualitySelect");
+
+    function updateVideo(url) {
+      iframe.src = url || "";
+    }
+
+    updateVideo(streams[0]?.url || "");
+
+    qualitySelect?.addEventListener("change", e => updateVideo(e.target.value));
+
+    // episode list
+    let allEpisodes = (anime.episodes || []).slice().reverse();
+    const buttonsWrapper = previewContainer.querySelector(".episode-buttons-wrapper");
+
+    if (allEpisodes.length) {
+      buttonsWrapper.innerHTML = allEpisodes.map(ep => {
+        const activeClass = ep.link === episodeId ? "active" : "";
+        const epMatch = ep.title?.match(/(\d+)\s*$/);
+        const epNum = epMatch ? epMatch[1] : ep.title || "Ep";
+        return `<button class="episode-btn ${activeClass}" data-ep-id="${ep.link}">${epNum}</button>`;
+      }).join("");
+    }
+
+    buttonsWrapper.querySelectorAll(".episode-btn").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const epId = btn.dataset.epId;
+        if (!epId) return;
+        sessionStorage.setItem("targetData", epId);
+        window.location.href = "/anime/preview.html";
+      });
+    });
+
+    // histori progress (firebase)
+    firebase.auth().onAuthStateChanged(user => {
+      if (user) {
+        saveAnimeProgress({
+          path: window.location.pathname,
+          animeTitle,
+          episode: animeEpisodeNumber,
+          dateSaved: new Date().toISOString(),
+          episodeUrl: episodeId,
+          imageUrl: animeImage
+        }, user.uid)
+          .then(() => console.log(`[Histori] Berhasil menyimpan progress: ${animeTitle} - Episode ${animeEpisodeNumber}`))
+          .catch(err => console.error(`[Histori] Gagal menyimpan progress`, err));
+      } else {
+        console.log(`[Histori] User belum login, tidak menyimpan progress: ${animeTitle} - Episode ${animeEpisodeNumber}`);
+      }
+    });
+
+  } catch (err) {
+    console.error(err);
     previewContainer.innerHTML = '<p class="text-center text-red-500">Terjadi kesalahan saat memuat episode.</p>';
   }
 }
 
-loadEpisode(epId);
+loadEpisode(epId || 'https://v1.samehadaku.how/anime/necronomico/');
 function saveAnimeProgress({path, animeTitle, episode, dateSaved, episodeUrl, imageUrl}, userId){
   if(!userId) return;
 
@@ -1341,8 +1478,6 @@ function enlargeVideo(btn) {
 
   document.body.appendChild(modal);
 }
-</script>
-<script src="https://fpyf8.com/88/tag.min.js" data-zone="165468" async data-cfasync="false">
 </script>
 </body>
 </html>

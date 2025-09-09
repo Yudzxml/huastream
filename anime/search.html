@@ -953,32 +953,66 @@ let currentPage = 1;
 let currentQuery = '';
 let currentGenre = '';
 
-// ===== Fungsi fetch data =====
-async function fetchAnimeBySearch(query, page = 1) {
-  try {
-    const res = await fetch(`${apiSearchBase}${encodeURIComponent(query)}&page=${page}`);
-    const data = await res.json();
-    return data.status === 200 && data.result ? JSON.parse(data.result) : [];
-  } catch (err) {
-    console.error('Error fetch search:', err);
-    return [];
-  }
-}
-
-async function fetchAnimeByGenre(genre, page = 1) {
-  try {
-    const res = await fetch(`https://www.sankavollerei.com/anime/samehadaku/genres/${genre}?page=${page}`);
-    const data = await res.json();
-    // ambil animeList dari data.data
-    return data.data ? data.data.animeList : [];
-    console.log(data)
-  } catch (err) {
-    console.error('Error fetch genre:', err);
-    return [];
-  }
-}
-
 // ===== Render hasil ke HTML =====
+async function fetchAnimeBySearch(query, page = 1) {
+  const mainApi = `${apiSearchBase}${encodeURIComponent(query)}&page=${page}`;
+  const fallbackApi = `https://api.yudzxyz.x-server.my.id/api/samehadaku?action=search&query=${encodeURIComponent(query)}&page=${page}`;
+
+  async function fetchData(url, isFallback = false) {
+    const res = await fetch(url);
+    const data = await res.json();
+
+    if (!isFallback) {
+      // === FORMAT API UTAMA ===
+      if (data.status === 200 && Array.isArray(data.result)) {
+        return data.result.map(a => ({
+          title: a.title,
+          img: a.thumbnail || a.img,
+          description: a.description || "",
+          type: a.type || "",
+          score: a.score || "",
+          genres: a.genres || [],
+          link: a.link || a.url || ""
+        }));
+      }
+      throw new Error("Format utama tidak valid");
+    } else {
+      // === FORMAT API FALLBACK ===
+      if (data.status === 200 && data.result) {
+        let result = [];
+        try {
+          result = JSON.parse(data.result);
+        } catch (e) {
+          throw new Error("Gagal parse result fallback");
+        }
+
+        return result.map(a => ({
+          title: a.title,
+          img: a.img,
+          description: a.description || "",
+          type: a.type || "",
+          score: a.score || "",
+          genres: a.genres || [],
+          link: a.link
+        }));
+      }
+      throw new Error("Format fallback tidak valid");
+    }
+  }
+
+  try {
+    return await fetchData(mainApi);
+  } catch (err) {
+    console.warn("⚠️ API utama gagal, coba fallback...");
+    try {
+      return await fetchData(fallbackApi, true);
+    } catch (err2) {
+      console.error("❌ API fallback juga gagal:", err2);
+      return [];
+    }
+  }
+}
+
 function renderAnimeList(animeList) {
   // cek jika daftar kosong
   if (!animeList || animeList.length === 0) {
@@ -990,15 +1024,12 @@ function renderAnimeList(animeList) {
 
   // render daftar anime
   animeListDiv.innerHTML = animeList.map(anime => {
-    // debug: pastikan link tersedia
-    console.log('anime.link:', anime.link);
-
     return `
       <div class="anime-card">
-        <img src="${anime.thumbnail || anime.img}" alt="${anime.title}" width="150">
+        <img src="${anime.img}" alt="${anime.title}" width="150">
         <h3>${anime.title}</h3>
-        <p>${anime.description || ''}</p>
-        <p>Type: ${anime.type || ''} | Score: ${anime.score || ''} | Status: ${anime.status || ''}</p>
+        <p>${anime.description}</p>
+        <p>Type: ${anime.type} | Score: ${anime.score}</p>
         <p class="genres">${anime.genres ? anime.genres.join(', ') : ''}</p>
         ${anime.link ? `<a href="#" class="watch-link" data-url="${anime.link}">Watch Now</a>` : ''}
       </div>
@@ -1007,32 +1038,21 @@ function renderAnimeList(animeList) {
 
   // pasang event listener untuk setiap link
   document.querySelectorAll('.watch-link').forEach(link => {
-  link.addEventListener('click', e => {
-    e.preventDefault();
+    link.addEventListener('click', e => {
+      e.preventDefault();
 
-    const targetUrl = link.dataset.url;
-    console.log('Clicked targetUrl:', targetUrl); // debug
+      const targetUrl = link.dataset.url;
+      if (targetUrl) {
+        const parts = targetUrl.split('/').filter(Boolean);
+        const id = parts.length ? parts[parts.length - 1] : null;
 
-    if (targetUrl) {
-      // ambil semua bagian URL yang tidak kosong
-      const parts = targetUrl.split('/').filter(Boolean);
-      // ambil elemen terakhir sebagai ID
-      const id = parts.length ? parts[parts.length - 1] : null;
-
-      if (id) {
-        console.log('Extracted id:', id); // debug
-        // simpan ID di localStorage
-        localStorage.setItem('targetData', JSON.stringify({ animeId: id }));
-        // pindah ke halaman info
-        window.location.href = '/anime/info.html';
-      } else {
-        console.warn('ID tidak ditemukan di URL!');
+        if (id) {
+          localStorage.setItem('targetData', JSON.stringify({ animeId: id }));
+          window.location.href = '/anime/info.html';
+        }
       }
-    } else {
-      console.warn('Data-url kosong!');
-    }
+    });
   });
-});
 
   // tampilkan label search & pagination
   labelSearch.style.display = 'inline-block';
@@ -1041,6 +1061,71 @@ function renderAnimeList(animeList) {
   prevBtn.disabled = currentPage === 1;
 }
 // ===== Render genre terbaru =====
+async function fetchAnimeByGenre(genre, page = 1) {
+  const mainApi = `https://www.sankavollerei.com/anime/samehadaku/genres/${genre}?page=${page}`;
+  const fallbackApi = `https://api.yudzxyz.x-server.my.id/api/samehadaku?action=genre&genre=${genre}&page=${page}`;
+
+  async function fetchData(url, isFallback = false) {
+    const res = await fetch(url);
+    const data = await res.json();
+
+    if (!isFallback) {
+      // === FORMAT API UTAMA ===
+      if (data.data && Array.isArray(data.data.animeList)) {
+        return data.data.animeList.map(a => ({
+          title: a.title,
+          poster: a.poster,
+          type: a.type || "",
+          score: a.score || "",
+          status: a.status || "",
+          genres: a.genreList ? a.genreList.map(g => g.title) : [],
+          url: a.href || a.url || "",
+          animeId: a.animeId || ""
+        }));
+      }
+      throw new Error("Format utama tidak valid");
+    } else {
+      // === FORMAT API FALLBACK ===
+      if (data.status === 200 && data.result) {
+        let parsed;
+        try {
+          parsed = JSON.parse(data.result);
+        } catch (e) {
+          throw new Error("Gagal parse result fallback");
+        }
+
+        if (!parsed.animeList || !Array.isArray(parsed.animeList)) {
+          throw new Error("animeList fallback kosong/invalid");
+        }
+
+        return parsed.animeList.map(a => ({
+          title: a.title,
+          poster: a.thumbnail,
+          type: a.type || "",
+          score: a.score || "",
+          status: a.status || "",
+          genres: a.genres || [],
+          url: a.url,
+          animeId: a.url ? a.url.split('/').filter(Boolean).pop() : ""
+        }));
+      }
+      throw new Error("Format fallback tidak valid");
+    }
+  }
+
+  try {
+    return await fetchData(mainApi);
+  } catch (err) {
+    console.warn("⚠️ API utama gagal, coba fallback...");
+    try {
+      return await fetchData(fallbackApi, true);
+    } catch (err2) {
+      console.error("❌ API fallback juga gagal:", err2);
+      return [];
+    }
+  }
+}
+
 function renderAnimeGenre(animeList) {
   if (!animeList || animeList.length === 0) {
     animeListDiv.innerHTML = '<p>Tidak ada anime ditemukan.</p>';
@@ -1050,29 +1135,28 @@ function renderAnimeGenre(animeList) {
   }
 
   animeListDiv.innerHTML = animeList.map(anime => {
-    const genresHTML = (anime.genreList || [])
-      .map(g => `<span class="badge">${g.title}</span>`)
+    const genresHTML = (anime.genres || [])
+      .map(g => `<span class="badge">${g}</span>`)
       .join(' ');
 
     return `
       <div class="anime-card">
         <img src="${anime.poster}" alt="${anime.title}" width="150">
         <h3>${anime.title}</h3>
-        <p>Type: ${anime.type || ''} | Score: ${anime.score || ''} | Status: ${anime.status || ''}</p>
+        <p>Type: ${anime.type} | Score: ${anime.score} | Status: ${anime.status}</p>
         <div class="genres">${genresHTML}</div>
-        ${anime.href ? `<a href="#" class="watch-link" data-id="${anime.animeId}" data-url="${anime.href}">Watch Now</a>` : ''}
+        ${anime.url ? `<a href="#" class="watch-link" data-id="${anime.animeId}" data-url="${anime.url}">Watch Now</a>` : ''}
       </div>
     `;
   }).join('');
 
-  // Event listener untuk tombol "Watch Now"
+  // Event listener "Watch Now"
   document.querySelectorAll('.watch-link').forEach(link => {
     link.addEventListener('click', e => {
       e.preventDefault();
       const animeId = link.dataset.id;
       const targetUrl = link.dataset.url;
       if (animeId && targetUrl) {
-        // Simpan di localStorage dengan format { animeId: ..., url: ... }
         localStorage.setItem('targetData', JSON.stringify({ animeId, url: targetUrl }));
         window.location.href = '/anime/info.html';
       }

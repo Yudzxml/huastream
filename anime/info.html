@@ -682,20 +682,21 @@ async function loadDetail(animeUrl) {
     return;
   }
 
-  const apiDetail = `https://www.sankavollerei.com/anime/samehadaku/anime/${animeUrl}`;
+  const apiMain = `https://www.sankavollerei.com/anime/samehadaku/anime/${animeUrl}`;
+  const apiFallback = `https://api.yudzxyz.x-server.my.id/api/samehadaku?action=detail&url=https://v1.samehadaku.how/anime/${animeUrl}/`;
+
   animeDetailContainer.innerHTML = '<p class="text-center text-gray-500">Loading detail...</p>';
 
+  let animeStorage = null;
+
   try {
-    const res = await axios.get(apiDetail);
+    // 🔹 API utama
+    const res = await axios.get(apiMain);
     const data = res.data?.data;
 
-    if (!data) {
-      animeDetailContainer.innerHTML = '<p class="text-center text-red-500">Info tidak ditemukan.</p>';
-      return;
-    }
+    if (!data) throw new Error("Data kosong dari API utama");
 
-    // --- Data utama ---
-    const animeStorage = {
+    animeStorage = {
       title: data.title || data.english || data.japanese || 'Judul Tidak Tersedia',
       image: data.poster || '',
       description: data.synopsis?.paragraphs?.join(' ') || 'Deskripsi tidak tersedia.',
@@ -703,41 +704,86 @@ async function loadDetail(animeUrl) {
       scoreUsers: data.score?.users || '0',
       type: data.type || '-',
       status: data.status || '-',
+      source: data.source || '-',
+      duration: data.duration || '-',
+      season: data.season || '-',
+      studios: data.studios || '-',
+      producers: data.producers || '-',
+      aired: data.aired || '-',
       episodes: (data.episodeList || []).map(ep => ({
         number: ep.title,
         title: `Episode ${ep.title}`,
         link: ep.samehadakuUrl + ep.href,
-        episodeId: ep.episodeId // simpan episodeId
+        episodeId: ep.episodeId
       })),
-      batchList: data.batchList || [],
-      genres: data.genreList || []
+      genres: data.genreList?.map(g => g.title) || []
     };
-    localStorage.setItem('animeData', JSON.stringify(animeStorage));
 
-    // --- Simpan setiap episode ke storage berdasarkan episodeId ---
-    animeStorage.episodes.forEach(ep => {
-      localStorage.setItem(ep.episodeId, JSON.stringify(ep));
-    });
+  } catch (err) {
+    console.warn("⚠️ Gagal ambil dari API utama, fallback ke API kedua...", err);
 
-    // --- Genres ---
-    const genresHTML = (animeStorage.genres || [])
-  .map(g => `<span class="badge">${g.title}</span>`)
-  .join(' ');
+    try {
+      const res2 = await axios.get(apiFallback);
+      const result = res2.data?.result;
 
-    // --- Episodes list (urut terbaru) ---
-    const episodesHTML = (animeStorage.episodes || [])
-      .sort((a,b)=>b.number-a.number)
-      .map(ep => `<li><a href="#" data-ep-id="${ep.episodeId}">${ep.title}</a></li>`).join('');
+      if (!result) throw new Error("Data kosong dari API fallback");
 
-    const firstEpisodeId = (animeStorage.episodes || []).sort((a,b)=>a.number-b.number)[0]?.episodeId || null;
+      animeStorage = {
+        title: result.title || result.english || result.japanese || 'Judul Tidak Tersedia',
+        image: result.img || '',
+        description: result.description || 'Deskripsi tidak tersedia.',
+        scoreValue: result.ratingValue || 'N/A',
+        scoreUsers: result.ratingCount || '0',
+        type: result.details?.Type || '-',
+        status: result.details?.Status || '-',
+        source: result.details?.Source || '-',
+        duration: result.details?.Duration || '-',
+        season: result.details?.Season || '-',
+        studios: result.details?.Studio || '-',
+        producers: result.details?.Producers || '-',
+        aired: result.details?.Released || '-',
+        episodes: (result.episodes || []).map(ep => ({
+          number: ep.number,
+          title: ep.title,
+          link: ep.link,
+          episodeId: ep.link
+        })),
+        genres: result.genres || []
+      };
 
-    // --- Render HTML ---
-    animeDetailContainer.innerHTML = `
+    } catch (err2) {
+      console.error("❌ Fallback juga gagal:", err2);
+      animeDetailContainer.innerHTML = '<p class="text-center text-red-500">Tidak bisa memuat detail anime.</p>';
+      return;
+    }
+  }
+
+  // ✅ Simpan ke storage
+  localStorage.setItem('animeData', JSON.stringify(animeStorage));
+  animeStorage.episodes.forEach(ep => {
+    localStorage.setItem(ep.episodeId, JSON.stringify(ep));
+  });
+
+  // 🔹 Render genres
+  const genresHTML = (animeStorage.genres || [])
+    .map(g => `<span class="badge">${g}</span>`)
+    .join(' ');
+
+  // 🔹 Render episodes (urut terbaru)
+  const episodesHTML = (animeStorage.episodes || [])
+    .sort((a, b) => Number(b.number) - Number(a.number))
+    .map(ep => `<li><a href="#" data-ep-id="${ep.episodeId}">${ep.title}</a></li>`)
+    .join('');
+
+  const firstEpisodeId = (animeStorage.episodes || [])
+    .sort((a, b) => Number(a.number) - Number(b.number))[0]?.episodeId || null;
+
+  // 🔹 Render HTML utama
+  animeDetailContainer.innerHTML = `
 <div class="anime-detail-wrapper">
   <div class="anime-thumb-container">
     <img src="${animeStorage.image}" alt="${animeStorage.title}" class="main-thumb">
   </div>
-
   <div class="anime-info-container">
     <h2 class="anime-title">${animeStorage.title}</h2>
     <span class="anime-rating"><i class="fa fa-star" style="color: gold;"></i> ${animeStorage.scoreValue} (${animeStorage.scoreUsers} votes)</span>
@@ -746,14 +792,14 @@ async function loadDetail(animeUrl) {
     <div class="anime-info">
       <h3>Info:</h3>
       <table>
-        <tr><td>Status</td><td>${data.status || '-'}</td></tr>
-        <tr><td>Type</td><td>${data.type || '-'}</td></tr>
-        <tr><td>Source</td><td>${data.source || '-'}</td></tr>
-        <tr><td>Duration</td><td>${data.duration || '-'}</td></tr>
-        <tr><td>Season</td><td>${data.season || '-'}</td></tr>
-        <tr><td>Studios</td><td>${data.studios || '-'}</td></tr>
-        <tr><td>Producers</td><td>${data.producers || '-'}</td></tr>
-        <tr><td>Aired</td><td>${data.aired || '-'}</td></tr>
+        <tr><td>Status</td><td>${animeStorage.status}</td></tr>
+        <tr><td>Type</td><td>${animeStorage.type}</td></tr>
+        <tr><td>Source</td><td>${animeStorage.source}</td></tr>
+        <tr><td>Duration</td><td>${animeStorage.duration}</td></tr>
+        <tr><td>Season</td><td>${animeStorage.season}</td></tr>
+        <tr><td>Studios</td><td>${animeStorage.studios}</td></tr>
+        <tr><td>Producers</td><td>${animeStorage.producers}</td></tr>
+        <tr><td>Aired</td><td>${animeStorage.aired}</td></tr>
       </table>
     </div>
     <button class="btn-watch-ep1"><i class="fas fa-play"></i> Nonton EPS 1</button>
@@ -762,30 +808,25 @@ async function loadDetail(animeUrl) {
 </div>
 `;
 
-    // --- Event klik tombol EPS 1 ---
-    document.querySelector('.btn-watch-ep1')?.addEventListener('click', () => {
-      if (firstEpisodeId) {
-        sessionStorage.setItem('targetData', firstEpisodeId);
+  // 🔹 Event klik tombol EPS 1
+  document.querySelector('.btn-watch-ep1')?.addEventListener('click', () => {
+    if (firstEpisodeId) {
+      sessionStorage.setItem('targetData', firstEpisodeId);
+      window.location.href = '/anime/preview.html';
+    }
+  });
+
+  // 🔹 Event klik semua episode
+  document.querySelectorAll('.anime-episodes a[data-ep-id]').forEach(link => {
+    link.addEventListener('click', e => {
+      e.preventDefault();
+      const epId = link.getAttribute('data-ep-id');
+      if (epId) {
+        sessionStorage.setItem('targetData', epId);
         window.location.href = '/anime/preview.html';
       }
     });
-
-    // --- Event klik semua episode ---
-    document.querySelectorAll('.anime-episodes a[data-ep-id]').forEach(link => {
-      link.addEventListener('click', e => {
-        e.preventDefault();
-        const epId = link.getAttribute('data-ep-id');
-        if (epId) {
-          sessionStorage.setItem('targetData', epId);
-          window.location.href = '/anime/preview.html';
-        }
-      });
-    });
-
-  } catch (err) {
-    console.error(err);
-    animeDetailContainer.innerHTML = '<p class="text-center text-red-500">Terjadi kesalahan saat memuat detail.</p>';
-  }
+  });
 }
 
 // --- Fungsi buka tab ---
